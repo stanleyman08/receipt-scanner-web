@@ -9,7 +9,8 @@ interface ProcessingScreenProps {
 }
 
 const stages: { key: ProcessingStage; label: string }[] = [
-  { key: 'optimizing', label: 'Optimizing image' },
+  { key: 'deskewing', label: 'Straightening receipt' },
+  { key: 'optimizing', label: 'Enhancing image' },
   { key: 'analyzing', label: 'Analyzing receipt' },
   { key: 'extracting', label: 'Extracting data' },
 ];

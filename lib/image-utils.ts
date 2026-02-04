@@ -1,8 +1,70 @@
+import { deskewReceipt } from './image-preprocessing';
+
+/**
+ * Enhances contrast for faded receipts (especially thermal paper).
+ * Only applies enhancement if the image has low contrast.
+ */
+function enhanceContrast(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+
+  // Find luminance range to detect low contrast
+  let min = 255;
+  let max = 0;
+
+  for (let i = 0; i < data.length; i += 4) {
+    // Calculate luminance using standard weights
+    const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    min = Math.min(min, lum);
+    max = Math.max(max, lum);
+  }
+
+  // Only apply contrast stretching if the image has low contrast
+  const range = max - min;
+  if (range < 200) {
+    const factor = 255 / Math.max(range, 1);
+
+    for (let i = 0; i < data.length; i += 4) {
+      // Apply contrast stretch to each channel
+      data[i] = Math.min(255, Math.max(0, (data[i] - min) * factor));
+      data[i + 1] = Math.min(255, Math.max(0, (data[i + 1] - min) * factor));
+      data[i + 2] = Math.min(255, Math.max(0, (data[i + 2] - min) * factor));
+      // Alpha channel (data[i + 3]) remains unchanged
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  }
+}
+
+/**
+ * Callback for tracking preprocessing progress
+ */
+export type PreprocessingProgressCallback = (stage: 'deskewing' | 'optimizing') => void;
+
 /**
  * Compresses and resizes an image for faster upload and OCR processing.
- * Reduces file size by 60-80% while maintaining OCR quality.
+ * Includes auto-deskew and contrast enhancement for improved OCR accuracy.
+ *
+ * Processing pipeline:
+ * 1. Auto-detect and deskew receipt (opencv.js)
+ * 2. Resize to max 1600x1600 while maintaining aspect ratio
+ * 3. Enhance contrast for faded receipts
+ * 4. Compress to JPEG at 85% quality
+ *
+ * @param imageDataUrl - The input image as a base64 data URL
+ * @param onProgress - Optional callback for progress updates
+ * @returns Optimized image as a base64 data URL
  */
-export async function optimizeImageForOCR(imageDataUrl: string): Promise<string> {
+export async function optimizeImageForOCR(
+  imageDataUrl: string,
+  onProgress?: PreprocessingProgressCallback
+): Promise<string> {
+  // Step 1: Auto-detect and deskew receipt
+  onProgress?.('deskewing');
+  const deskewed = await deskewReceipt(imageDataUrl);
+
+  // Step 2: Resize, enhance contrast, and compress
+  onProgress?.('optimizing');
   return new Promise((resolve, reject) => {
     const img = new Image();
 
@@ -36,7 +98,10 @@ export async function optimizeImageForOCR(imageDataUrl: string): Promise<string>
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, width, height);
 
-      // Compress to JPEG with 85% quality (good balance for OCR)
+      // Step 3: Enhance contrast for faded receipts
+      enhanceContrast(ctx, width, height);
+
+      // Step 4: Compress to JPEG with 85% quality (good balance for OCR)
       const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
       resolve(optimizedDataUrl);
@@ -46,7 +111,7 @@ export async function optimizeImageForOCR(imageDataUrl: string): Promise<string>
       reject(new Error('Failed to load image for optimization'));
     };
 
-    img.src = imageDataUrl;
+    img.src = deskewed;
   });
 }
 

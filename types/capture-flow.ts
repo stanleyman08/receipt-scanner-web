@@ -1,6 +1,6 @@
 import { Receipt, ParsedReceiptData, ReceiptInsert } from './receipt';
 
-export type ProcessingStage = 'optimizing' | 'analyzing' | 'extracting';
+export type ProcessingStage = 'deskewing' | 'optimizing' | 'analyzing' | 'extracting';
 
 export type CaptureFlowState =
   | { status: 'idle' }

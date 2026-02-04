@@ -96,9 +96,11 @@ export default function Home() {
     };
 
     try {
-      // Stage 1: Optimize image (compress & resize for faster upload/OCR)
-      updateStage('optimizing');
-      const optimizedImage = await optimizeImageForOCR(imageData);
+      // Stage 1 & 2: Deskew and optimize image (with progress callback)
+      updateStage('deskewing');
+      const optimizedImage = await optimizeImageForOCR(imageData, (preprocessStage) => {
+        updateStage(preprocessStage);
+      });
 
       if (abortControllerRef.current?.signal.aborted) return;
 

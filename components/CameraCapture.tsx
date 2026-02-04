@@ -14,6 +14,37 @@ interface CameraCaptureProps {
   selectedBucket?: Bucket | null;
 }
 
+// Overlay margin (10% on each side = 80% capture area)
+const OVERLAY_MARGIN = 0.1;
+
+/**
+ * Crops the captured image to the overlay area (center 80%)
+ */
+function cropToOverlay(imageDataUrl: string): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const cropX = img.width * OVERLAY_MARGIN;
+      const cropY = img.height * OVERLAY_MARGIN;
+      const cropWidth = img.width * (1 - 2 * OVERLAY_MARGIN);
+      const cropHeight = img.height * (1 - 2 * OVERLAY_MARGIN);
+
+      canvas.width = cropWidth;
+      canvas.height = cropHeight;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+      resolve(canvas.toDataURL('image/jpeg', 0.92));
+    };
+    img.onerror = () => {
+      // On error, return original image
+      resolve(imageDataUrl);
+    };
+    img.src = imageDataUrl;
+  });
+}
+
 export default function CameraCapture({
   onCapture,
   onOpenCamera,
@@ -42,7 +73,10 @@ export default function CameraCapture({
 
       const imageSrc = webcamRef.current.getScreenshot();
       if (imageSrc) {
-        onCapture(imageSrc);
+        // Crop to overlay area before passing to parent
+        cropToOverlay(imageSrc).then(croppedImage => {
+          onCapture(croppedImage);
+        });
       }
     }
   }, [onCapture]);
@@ -82,6 +116,34 @@ export default function CameraCapture({
           onUserMediaError={handleCameraError}
           className="flex-1 object-cover w-full h-full"
         />
+
+        {/* Receipt positioning overlay */}
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Darkened background outside frame */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            style={{
+              clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, 10% 10%, 10% 90%, 90% 90%, 90% 10%, 10% 10%)',
+            }}
+          />
+
+          {/* Receipt frame with corner markers */}
+          <div className="absolute left-[10%] right-[10%] top-[10%] bottom-[10%] border-2 border-white/70 rounded-lg">
+            {/* Top-left corner */}
+            <div className="absolute -top-0.5 -left-0.5 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg" />
+            {/* Top-right corner */}
+            <div className="absolute -top-0.5 -right-0.5 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg" />
+            {/* Bottom-left corner */}
+            <div className="absolute -bottom-0.5 -left-0.5 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg" />
+            {/* Bottom-right corner */}
+            <div className="absolute -bottom-0.5 -right-0.5 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-lg" />
+          </div>
+
+          {/* Instruction text */}
+          <p className="absolute top-4 left-0 right-0 text-center text-white text-sm font-medium drop-shadow-lg">
+            Position receipt within the frame
+          </p>
+        </div>
 
         {/* Flash overlay */}
         {showFlash && (
