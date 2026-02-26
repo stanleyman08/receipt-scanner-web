@@ -2,7 +2,7 @@
 
 import { Receipt } from '@/types/receipt';
 import { Bucket } from '@/types/bucket';
-import { downloadCSV } from '@/lib/csv';
+import { downloadBucketExcel } from '@/lib/excel';
 
 interface ExportButtonProps {
   receipts: Receipt[];
@@ -12,10 +12,8 @@ interface ExportButtonProps {
 
 export default function ExportButton({ receipts, disabled, bucket }: ExportButtonProps) {
   const handleExport = () => {
-    const filename = bucket
-      ? `receipts-${bucket.year}-${String(bucket.month).padStart(2, '0')}-${bucket.category}.csv`
-      : `receipts-${new Date().toISOString().split('T')[0]}.csv`;
-    downloadCSV(receipts, filename, bucket);
+    if (!bucket) return;
+    downloadBucketExcel(receipts, bucket);
   };
 
   return (
@@ -36,8 +34,8 @@ export default function ExportButton({ receipts, disabled, bucket }: ExportButto
           clipRule="evenodd"
         />
       </svg>
-      <span className="md:hidden">CSV</span>
-      <span className="hidden md:inline">Export to CSV</span>
+      <span className="md:hidden">Excel</span>
+      <span className="hidden md:inline">Export to Excel</span>
     </button>
   );
 }

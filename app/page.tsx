@@ -26,7 +26,7 @@ import {
   filterBucketsByYearMonth,
   filterReceiptsByYear,
 } from '@/lib/bucket';
-import { downloadYearCSV } from '@/lib/csv';
+import { downloadYearExcel } from '@/lib/excel';
 import { optimizeImageForOCR } from '@/lib/image-utils';
 
 export default function Home() {
@@ -130,7 +130,7 @@ export default function Home() {
     if (selectedYear === null) return;
     const yearReceipts = filterReceiptsByYear(receipts, buckets, selectedYear);
     const bucketMap = new Map(buckets.map((b) => [b.id, b]));
-    downloadYearCSV(yearReceipts, bucketMap, selectedYear);
+    downloadYearExcel(yearReceipts, bucketMap, selectedYear);
   };
 
   // Guard: if selectedYear disappears from available years, reset
