@@ -126,11 +126,11 @@ export default function Home() {
     }
   };
 
-  const handleExportYear = () => {
+  const handleExportYear = async () => {
     if (selectedYear === null) return;
     const yearReceipts = filterReceiptsByYear(receipts, buckets, selectedYear);
     const bucketMap = new Map(buckets.map((b) => [b.id, b]));
-    downloadYearExcel(yearReceipts, bucketMap, selectedYear);
+    await downloadYearExcel(yearReceipts, bucketMap, selectedYear);
   };
 
   // Guard: if selectedYear disappears from available years, reset

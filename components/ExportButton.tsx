@@ -11,9 +11,9 @@ interface ExportButtonProps {
 }
 
 export default function ExportButton({ receipts, disabled, bucket }: ExportButtonProps) {
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!bucket) return;
-    downloadBucketExcel(receipts, bucket);
+    await downloadBucketExcel(receipts, bucket);
   };
 
   return (
