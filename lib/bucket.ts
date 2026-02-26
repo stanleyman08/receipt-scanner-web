@@ -41,3 +41,78 @@ export function bucketExists(
     (b) => b.year === year && b.month === month && b.category === category
   );
 }
+
+// Extract distinct years from buckets, sorted descending
+export function getUniqueYears(buckets: Bucket[]): number[] {
+  const years = new Set(buckets.map((b) => b.year));
+  return [...years].sort((a, b) => b - a);
+}
+
+// Group buckets by year, each group sorted by month desc / category asc
+export function groupBucketsByYear(buckets: Bucket[]): Map<number, Bucket[]> {
+  const map = new Map<number, Bucket[]>();
+  for (const bucket of buckets) {
+    const group = map.get(bucket.year);
+    if (group) {
+      group.push(bucket);
+    } else {
+      map.set(bucket.year, [bucket]);
+    }
+  }
+  for (const [year, group] of map) {
+    map.set(year, group.sort(compareBuckets));
+  }
+  return map;
+}
+
+// Total receipt count per year for display on year tabs
+export function getReceiptCountsByYear(
+  receipts: Receipt[],
+  buckets: Bucket[]
+): Map<number, number> {
+  const bucketYearMap = new Map<string, number>();
+  for (const bucket of buckets) {
+    bucketYearMap.set(bucket.id, bucket.year);
+  }
+  const counts = new Map<number, number>();
+  for (const receipt of receipts) {
+    if (receipt.bucket_id) {
+      const year = bucketYearMap.get(receipt.bucket_id);
+      if (year !== undefined) {
+        counts.set(year, (counts.get(year) || 0) + 1);
+      }
+    }
+  }
+  return counts;
+}
+
+// Get unique months for a given year, sorted descending
+export function getUniqueMonthsForYear(buckets: Bucket[], year: number): number[] {
+  const months = new Set(
+    buckets.filter((b) => b.year === year).map((b) => b.month)
+  );
+  return [...months].sort((a, b) => b - a);
+}
+
+// Filter buckets by year and month, sorted by category asc
+export function filterBucketsByYearMonth(
+  buckets: Bucket[],
+  year: number,
+  month: number
+): Bucket[] {
+  return buckets
+    .filter((b) => b.year === year && b.month === month)
+    .sort((a, b) => a.category.localeCompare(b.category));
+}
+
+// Filter receipts that belong to buckets of a given year
+export function filterReceiptsByYear(
+  receipts: Receipt[],
+  buckets: Bucket[],
+  year: number
+): Receipt[] {
+  const yearBucketIds = new Set(
+    buckets.filter((b) => b.year === year).map((b) => b.id)
+  );
+  return receipts.filter((r) => r.bucket_id && yearBucketIds.has(r.bucket_id));
+}

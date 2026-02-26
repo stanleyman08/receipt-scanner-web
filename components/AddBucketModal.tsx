@@ -20,7 +20,7 @@ export default function AddBucketModal({
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
 
-  const [year, setYear] = useState(currentYear.toString());
+  const [year, setYear] = useState((currentYear - 1).toString());
   const [month, setMonth] = useState(currentMonth.toString());
   const [category, setCategory] = useState<BucketCategory>('Food');
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export default function AddBucketModal({
     if (isOpen) {
       // Reset form when opening
       const timeoutId = setTimeout(() => {
-        setYear(currentYear.toString());
+        setYear((currentYear - 1).toString());
         setMonth(currentMonth.toString());
         setCategory('Food');
         setError(null);

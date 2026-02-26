@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import CameraCapture from '@/components/CameraCapture';
 import ReceiptTable from '@/components/ReceiptTable';
@@ -19,7 +19,14 @@ import {
   getReceiptCountsByBucket,
   sortBuckets,
   getDefaultBucket,
+  getUniqueYears,
+  groupBucketsByYear,
+  getReceiptCountsByYear,
+  getUniqueMonthsForYear,
+  filterBucketsByYearMonth,
+  filterReceiptsByYear,
 } from '@/lib/bucket';
+import { downloadYearCSV } from '@/lib/csv';
 import { optimizeImageForOCR } from '@/lib/image-utils';
 
 export default function Home() {
@@ -34,6 +41,8 @@ export default function Home() {
 
   // Bucket state
   const [selectedBucket, setSelectedBucket] = useState<Bucket | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [isAddBucketModalOpen, setIsAddBucketModalOpen] = useState(false);
 
   // Edit receipt state
@@ -47,6 +56,22 @@ export default function Home() {
   // Derived state
   const sortedBuckets = sortBuckets(buckets);
   const receiptCounts = getReceiptCountsByBucket(receipts);
+  const uniqueYears = getUniqueYears(buckets);
+  const bucketsByYear = groupBucketsByYear(buckets);
+  const yearReceiptCounts = getReceiptCountsByYear(receipts, buckets);
+  const uniqueMonths = useMemo(
+    () => selectedYear !== null ? getUniqueMonthsForYear(buckets, selectedYear) : [],
+    [buckets, selectedYear]
+  );
+  const bucketsForYearMonth = useMemo(
+    () => selectedYear !== null && selectedMonth !== null
+      ? filterBucketsByYearMonth(buckets, selectedYear, selectedMonth)
+      : [],
+    [buckets, selectedYear, selectedMonth]
+  );
+  const yearReceiptTotal = selectedYear !== null
+    ? (yearReceiptCounts.get(selectedYear) || 0)
+    : 0;
   const filteredReceipts = selectedBucket
     ? filterByBucket(receipts, selectedBucket.id)
     : [];
@@ -57,11 +82,13 @@ export default function Home() {
       setReceipts(receiptsData);
       setBuckets(bucketsData);
       setIsLoading(false);
-      // Set default bucket after data loads
+      // Set default bucket and year after data loads
       if (selectedBucket === null && bucketsData.length > 0) {
         const defaultBucket = getDefaultBucket(bucketsData);
         if (defaultBucket) {
           setSelectedBucket(defaultBucket);
+          setSelectedYear(defaultBucket.year);
+          setSelectedMonth(defaultBucket.month);
         }
       }
     });
@@ -76,11 +103,59 @@ export default function Home() {
     setSelectedBucket(bucket);
   };
 
+  const handleSelectYear = (year: number) => {
+    setSelectedYear(year);
+    const monthsForYear = getUniqueMonthsForYear(buckets, year);
+    if (monthsForYear.length > 0) {
+      const month = monthsForYear[0];
+      setSelectedMonth(month);
+      const yearMonthBuckets = filterBucketsByYearMonth(buckets, year, month);
+      if (yearMonthBuckets.length > 0) {
+        setSelectedBucket(yearMonthBuckets[0]);
+      }
+    }
+  };
+
+  const handleSelectMonth = (month: number) => {
+    setSelectedMonth(month);
+    if (selectedYear !== null) {
+      const yearMonthBuckets = filterBucketsByYearMonth(buckets, selectedYear, month);
+      if (yearMonthBuckets.length > 0 && selectedBucket?.month !== month) {
+        setSelectedBucket(yearMonthBuckets[0]);
+      }
+    }
+  };
+
+  const handleExportYear = () => {
+    if (selectedYear === null) return;
+    const yearReceipts = filterReceiptsByYear(receipts, buckets, selectedYear);
+    const bucketMap = new Map(buckets.map((b) => [b.id, b]));
+    downloadYearCSV(yearReceipts, bucketMap, selectedYear);
+  };
+
+  // Guard: if selectedYear disappears from available years, reset
+  useEffect(() => {
+    if (uniqueYears.length === 0) return;
+    if (selectedYear === null || !uniqueYears.includes(selectedYear)) {
+      setSelectedYear(uniqueYears[0]);
+    }
+  }, [uniqueYears, selectedYear]);
+
+  // Guard: if selectedMonth disappears from available months, reset
+  useEffect(() => {
+    if (uniqueMonths.length === 0) return;
+    if (selectedMonth === null || !uniqueMonths.includes(selectedMonth)) {
+      setSelectedMonth(uniqueMonths[0]);
+    }
+  }, [uniqueMonths, selectedMonth]);
+
   const handleAddBucket = async (year: number, month: number, category: BucketCategory) => {
     const newBucket = await createBucket({ year, month, category });
     if (newBucket) {
       setBuckets((prev) => [...prev, newBucket]);
       setSelectedBucket(newBucket);
+      setSelectedYear(newBucket.year);
+      setSelectedMonth(newBucket.month);
       setIsAddBucketModalOpen(false);
     } else {
       setError('Failed to create bucket. It may already exist.');
@@ -375,12 +450,21 @@ export default function Home() {
             {/* Mobile bucket selector - rendered above flex container */}
             {sortedBuckets.length > 0 && (
               <BucketSidebar
-                buckets={sortedBuckets}
+                buckets={bucketsForYearMonth}
                 selectedBucket={selectedBucket}
                 receiptCounts={receiptCounts}
                 onSelectBucket={handleSelectBucket}
                 onAddBucket={() => setIsAddBucketModalOpen(true)}
                 variant="mobile"
+                selectedYear={selectedYear}
+                selectedMonth={selectedMonth}
+                years={uniqueYears}
+                months={uniqueMonths}
+                yearReceiptCounts={yearReceiptCounts}
+                onSelectYear={handleSelectYear}
+                onSelectMonth={handleSelectMonth}
+                onExportYear={handleExportYear}
+                yearReceiptTotal={yearReceiptTotal}
               />
             )}
 
@@ -388,12 +472,21 @@ export default function Home() {
               {/* Desktop Sidebar - only shown when there are buckets */}
               {sortedBuckets.length > 0 && (
                 <BucketSidebar
-                  buckets={sortedBuckets}
+                  buckets={bucketsForYearMonth}
                   selectedBucket={selectedBucket}
                   receiptCounts={receiptCounts}
                   onSelectBucket={handleSelectBucket}
                   onAddBucket={() => setIsAddBucketModalOpen(true)}
                   variant="desktop"
+                  selectedYear={selectedYear}
+                  selectedMonth={selectedMonth}
+                  years={uniqueYears}
+                  months={uniqueMonths}
+                  yearReceiptCounts={yearReceiptCounts}
+                  onSelectYear={handleSelectYear}
+                  onSelectMonth={handleSelectMonth}
+                  onExportYear={handleExportYear}
+                  yearReceiptTotal={yearReceiptTotal}
                 />
               )}
 
