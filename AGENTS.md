@@ -40,6 +40,8 @@ Every implementation or fix, whether it arrives as `mattpocock-skills:implement`
 
 The GitHub repo is connected to Vercel, so **every push to `main` deploys to production**. Only push when the checks pass and the reviews above are done. After changing an environment variable, redeploy for it to take effect.
 
+Preview deployments get their own Neon database branches, copied from `main`. After a PR merges, delete its database branch in the Neon console (`vercel integration open neon receipt-scanner-db`): the free plan allows 10 branches.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

@@ -65,7 +65,7 @@ DATABASE_URL=<dev branch, pooled>
 DATABASE_URL_UNPOOLED=<dev branch, direct>
 ```
 
-Preview deployments get their own copy of the main database automatically.
+Preview deployments get their own copy of the main database automatically. Delete a pull request's database branch once it merges, since the free plan allows 10 branches.
 
 ### 6. AWS Textract
 
