@@ -1,3 +1,20 @@
+/** What gets reviewed and edited on a receipt. Amounts are whole cents; the receipt date is YYYY-MM-DD. */
+export interface ReceiptDetails {
+  vendor: string | null;
+  receipt_date: string | null;
+  invoice_number: string | null;
+  subtotal_cents: number | null;
+  gst_cents: number | null;
+  total_cents: number | null;
+}
+
+/** A stored receipt: its details plus the bucket it's filed in. Replaces `Receipt` once the app reads from Neon. */
+export interface SavedReceipt extends ReceiptDetails {
+  id: string;
+  bucket_id: string;
+  created_at: string;
+}
+
 export interface Receipt {
   id: string;
   subtotal: string | null;
