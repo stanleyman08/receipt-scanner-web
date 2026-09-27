@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import { type Bucket, MONTH_NAMES } from "@/types/bucket";
-import type { Receipt } from "@/types/receipt";
+import { formatReceiptDate, type Receipt } from "@/types/receipt";
 
 const BUSINESS_NAME = "Carino";
 
@@ -42,7 +42,7 @@ function buildSheet(ws: ExcelJS.Worksheet, receipts: Receipt[], bucket: Bucket):
   const dataStartRow = 4;
   receipts.forEach((receipt, idx) => {
     const row = ws.getRow(dataStartRow + idx);
-    row.getCell(1).value = receipt.receipt_date ?? "";
+    row.getCell(1).value = receipt.receipt_date ? formatReceiptDate(receipt.receipt_date) : "";
     row.getCell(2).value = receipt.vendor ?? "";
     row.getCell(3).value = receipt.invoice_number ?? "";
 

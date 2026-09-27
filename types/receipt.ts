@@ -17,3 +17,8 @@ export interface Receipt extends ReceiptDetails {
 
 /** What /api/scan-receipt returns. */
 export type ScanResponse = { success: true; details: ReceiptDetails } | { success: false; error: string };
+
+/** A receipt date as the app and the Excel export show it: 2026/03/28. */
+export function formatReceiptDate(receiptDate: string): string {
+  return receiptDate.replaceAll("-", "/");
+}

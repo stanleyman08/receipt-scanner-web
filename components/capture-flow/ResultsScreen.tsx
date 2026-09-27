@@ -1,7 +1,7 @@
 "use client";
 
 import { formatCents } from "@/lib/money";
-import type { Receipt } from "@/types/receipt";
+import { formatReceiptDate, type Receipt } from "@/types/receipt";
 
 interface ResultsScreenProps {
   imageData: string;
@@ -13,7 +13,7 @@ interface ResultsScreenProps {
 export default function ResultsScreen({ imageData, receipt, onSave, onScanAnother }: ResultsScreenProps) {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
-    return dateStr; // Already normalized to YYYY/MM/DD format
+    return formatReceiptDate(dateStr);
   };
 
   return (

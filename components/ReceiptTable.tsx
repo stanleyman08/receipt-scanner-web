@@ -11,7 +11,7 @@ import {
 import { useMemo, useState } from "react";
 import { formatCents } from "@/lib/money";
 import { type Bucket, formatBucketLabel } from "@/types/bucket";
-import type { Receipt } from "@/types/receipt";
+import { formatReceiptDate, type Receipt } from "@/types/receipt";
 
 interface ReceiptTableProps {
   receipts: Receipt[];
@@ -30,7 +30,10 @@ export default function ReceiptTable({ receipts, selectedBucket, onDelete, onEdi
     () => [
       columnHelper.accessor("receipt_date", {
         header: "Date",
-        cell: (info) => info.getValue() || "-",
+        cell: (info) => {
+          const receiptDate = info.getValue();
+          return receiptDate ? formatReceiptDate(receiptDate) : "-";
+        },
         sortingFn: "alphanumeric",
       }),
       columnHelper.accessor("vendor", {
