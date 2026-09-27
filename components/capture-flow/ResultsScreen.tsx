@@ -21,7 +21,7 @@ export default function ResultsScreen({ imageData, receipt, bucket, onSave, onSc
 
   return (
     <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4 animate-fade-in">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Success header */}
         <div className="flex flex-col items-center mb-6">
           <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center mb-4 animate-scale-in">
