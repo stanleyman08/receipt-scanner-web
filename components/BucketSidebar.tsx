@@ -1,6 +1,6 @@
 "use client";
 
-import { Bucket, MONTH_NAMES } from "@/types/bucket";
+import { type Bucket, MONTH_NAMES } from "@/types/bucket";
 
 interface BucketSidebarProps {
   buckets: Bucket[];

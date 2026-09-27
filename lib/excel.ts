@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
-import { Bucket, MONTH_NAMES } from "@/types/bucket";
-import { Receipt } from "@/types/receipt";
+import { type Bucket, MONTH_NAMES } from "@/types/bucket";
+import type { Receipt } from "@/types/receipt";
 
 const BUSINESS_NAME = "Carino";
 

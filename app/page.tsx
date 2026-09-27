@@ -25,9 +25,15 @@ import { downloadYearExcel } from "@/lib/excel";
 import { optimizeImageForOCR } from "@/lib/image-utils";
 import { createBucket, deleteReceipt, getBuckets, getReceipts, updateReceipt } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase/client";
-import { Bucket, BucketCategory, formatBucketLabel } from "@/types/bucket";
-import { CaptureFlowState, ProcessingStage } from "@/types/capture-flow";
-import { EditedReceiptData, ParseReceiptResponse, Receipt, ReceiptInsert, SaveReceiptResponse } from "@/types/receipt";
+import { type Bucket, type BucketCategory, formatBucketLabel } from "@/types/bucket";
+import type { CaptureFlowState, ProcessingStage } from "@/types/capture-flow";
+import type {
+  EditedReceiptData,
+  ParseReceiptResponse,
+  Receipt,
+  ReceiptInsert,
+  SaveReceiptResponse,
+} from "@/types/receipt";
 
 export default function Home() {
   const router = useRouter();

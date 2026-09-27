@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { Bucket, BucketInsert } from "@/types/bucket";
-import { Receipt, ReceiptInsert } from "@/types/receipt";
+import type { Bucket, BucketInsert } from "@/types/bucket";
+import type { Receipt, ReceiptInsert } from "@/types/receipt";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { bucketExists } from "@/lib/bucket";
-import { BUCKET_CATEGORIES, Bucket, BucketCategory, MONTH_NAMES } from "@/types/bucket";
+import { BUCKET_CATEGORIES, type Bucket, type BucketCategory, MONTH_NAMES } from "@/types/bucket";
 
 interface AddBucketModalProps {
   isOpen: boolean;

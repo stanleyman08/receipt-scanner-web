@@ -5,12 +5,12 @@ import {
   flexRender,
   getCoreRowModel,
   getSortedRowModel,
-  SortingState,
+  type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
-import { Bucket, formatBucketLabel } from "@/types/bucket";
-import { Receipt } from "@/types/receipt";
+import { type Bucket, formatBucketLabel } from "@/types/bucket";
+import type { Receipt } from "@/types/receipt";
 
 interface ReceiptTableProps {
   receipts: Receipt[];

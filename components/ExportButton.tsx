@@ -1,8 +1,8 @@
 "use client";
 
 import { downloadBucketExcel } from "@/lib/excel";
-import { Bucket } from "@/types/bucket";
-import { Receipt } from "@/types/receipt";
+import type { Bucket } from "@/types/bucket";
+import type { Receipt } from "@/types/receipt";
 
 interface ExportButtonProps {
   receipts: Receipt[];

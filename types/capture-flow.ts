@@ -1,4 +1,4 @@
-import { ParsedReceiptData, Receipt, ReceiptInsert } from "./receipt";
+import type { ParsedReceiptData, Receipt, ReceiptInsert } from "./receipt";
 
 export type ProcessingStage = "deskewing" | "optimizing" | "analyzing" | "extracting";
 

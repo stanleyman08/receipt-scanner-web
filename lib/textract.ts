@@ -1,5 +1,10 @@
-import { AnalyzeExpenseCommand, ExpenseDocument, ExpenseField, TextractClient } from "@aws-sdk/client-textract";
-import { ParsedReceiptData } from "@/types/receipt";
+import {
+  AnalyzeExpenseCommand,
+  type ExpenseDocument,
+  type ExpenseField,
+  TextractClient,
+} from "@aws-sdk/client-textract";
+import type { ParsedReceiptData } from "@/types/receipt";
 
 const textractClient = new TextractClient({
   region: process.env.AWS_REGION || "us-east-1",
@@ -71,7 +76,7 @@ function normalizeDate(value: string | null): string | null {
   const cleaned = value.trim();
 
   // Try: YY/MM/DD format (e.g., "26/01/31" → "2026/01/31")
-  const yymmdd = cleaned.match(/^(\d{2})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  const yymmdd = cleaned.match(/^(\d{2})[/-](\d{1,2})[/-](\d{1,2})$/);
   if (yymmdd) {
     const [, yy, m, d] = yymmdd;
     const year = parseInt(yy) < 50 ? `20${yy}` : `19${yy}`; // 00-49 = 2000s, 50-99 = 1900s
@@ -83,7 +88,7 @@ function normalizeDate(value: string | null): string | null {
   }
 
   // Try: YYYY-MM-DD or YYYY/MM/DD (ISO format)
-  const iso = cleaned.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  const iso = cleaned.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/);
   if (iso) {
     const [, y, m, d] = iso;
     const month = m.padStart(2, "0");
@@ -92,7 +97,7 @@ function normalizeDate(value: string | null): string | null {
   }
 
   // Try common formats manually: DD/MM/YYYY or DD-MM-YYYY
-  const ddmmyyyy = cleaned.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  const ddmmyyyy = cleaned.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
   if (ddmmyyyy) {
     const [, d, m, y] = ddmmyyyy;
     const day = d.padStart(2, "0");

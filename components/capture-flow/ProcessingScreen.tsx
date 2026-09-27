@@ -1,6 +1,6 @@
 "use client";
 
-import { ProcessingStage } from "@/types/capture-flow";
+import type { ProcessingStage } from "@/types/capture-flow";
 
 interface ProcessingScreenProps {
   imageData: string;

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { saveReceipt } from "@/lib/supabase";
 import { createClient } from "@/lib/supabase/server";
-import { ReceiptInsert, SaveReceiptResponse } from "@/types/receipt";
+import type { ReceiptInsert, SaveReceiptResponse } from "@/types/receipt";
 
 export async function POST(request: NextRequest): Promise<NextResponse<SaveReceiptResponse>> {
   try {

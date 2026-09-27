@@ -1,5 +1,5 @@
-import { Bucket, compareBuckets } from "@/types/bucket";
-import { Receipt } from "@/types/receipt";
+import { type Bucket, compareBuckets } from "@/types/bucket";
+import type { Receipt } from "@/types/receipt";
 
 // Filter receipts by bucket_id
 export function filterByBucket(receipts: Receipt[], bucketId: string): Receipt[] {

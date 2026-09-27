@@ -1,6 +1,6 @@
 "use client";
 
-import { Receipt } from "@/types/receipt";
+import type { Receipt } from "@/types/receipt";
 
 interface ResultsScreenProps {
   imageData: string;

@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import Webcam from "react-webcam";
-import { Bucket, formatBucketLabel } from "@/types/bucket";
+import { type Bucket, formatBucketLabel } from "@/types/bucket";
 
 interface CameraCaptureProps {
   onCapture: (imageData: string) => void;
