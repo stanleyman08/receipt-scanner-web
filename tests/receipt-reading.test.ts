@@ -58,6 +58,8 @@ describe("readReceipt", () => {
     ["March 28 2026", "2026-03-28"],
     ["28 Mar 2026", "2026-03-28"],
     ["28-Mar-2026", "2026-03-28"],
+    ["28-Mar-26", "2026-03-28"],
+    ["Mar 28, 26", "2026-03-28"],
   ])("reads the receipt date %s as %s", (written, date) => {
     expect(readReceipt(receipt(field("INVOICE_RECEIPT_DATE", written))).receipt_date).toBe(date);
   });
@@ -72,14 +74,14 @@ describe("readReceipt", () => {
     expect(readReceipt(receipt(field("INVOICE_RECEIPT_DATE", written))).receipt_date).toBeNull();
   });
 
-  it("works out a missing subtotal as the total minus GST", () => {
+  it("leaves the subtotal blank when the receipt doesn't show one", () => {
     const fields = readReceipt(receipt(field("TAX", "$0.50"), field("TOTAL", "$10.50")));
-    expect(fields.subtotal_cents).toBe(1000);
+    expect(fields).toMatchObject({ subtotal_cents: null, gst_cents: 50, total_cents: 1050 });
   });
 
-  it("uses the total as the subtotal when the receipt shows neither subtotal nor GST", () => {
-    const fields = readReceipt(receipt(field("TOTAL", "$12.00")));
-    expect(fields).toMatchObject({ subtotal_cents: 1200, gst_cents: 0 });
+  it("leaves GST blank when the receipt doesn't show it", () => {
+    const fields = readReceipt(receipt(field("SUBTOTAL", "$12.00"), field("TOTAL", "$12.00")));
+    expect(fields).toMatchObject({ subtotal_cents: 1200, gst_cents: null, total_cents: 1200 });
   });
 
   it("finds GST by its label, but never takes a GST registration number as the amount", () => {
