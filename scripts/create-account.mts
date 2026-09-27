@@ -3,8 +3,8 @@
 //   read -r ACCOUNT_EMAIL; read -rs ACCOUNT_PASSWORD; export ACCOUNT_EMAIL ACCOUNT_PASSWORD; pnpm create-account
 import { createAuth } from "../lib/auth.ts";
 
-// The sign-in page is public and everyone shares this password, so it has to be long.
-const MIN_PASSWORD_LENGTH = 16;
+// Better Auth's own minimum. Checked here too, because resetting a password skips Better Auth's check.
+const MIN_PASSWORD_LENGTH = 8;
 const ACCOUNT_NAME = "Carino";
 
 const email = process.env.ACCOUNT_EMAIL?.trim().toLowerCase();
