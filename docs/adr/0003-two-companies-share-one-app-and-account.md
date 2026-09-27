@@ -1,0 +1,3 @@
+# Two companies share one app, one account and one database
+
+Carino and Peko Peko keep separate books, but their receipts are handled together, so both companies live in the same deployment, the same Neon database and the one shared account. Every bucket belongs to one company, and a receipt takes its company from its bucket; the app shows and exports one company at a time. We rejected an account (or a database) per company because it would add sign-in and access rules nobody needs today. If one company's staff ever have to be kept out of the other's books, accounts will first need to be tied to companies.
