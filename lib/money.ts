@@ -1,7 +1,7 @@
 // Amounts are stored as whole cents. These convert between cents and what people read and type.
 
-// A currency code before or after the amount, e.g. "CAD$ 60.00", "CA$12.00", "USD 7.50" or "60.00 CAD".
-const CURRENCY_CODE = /^[A-Z]{1,3}\$|^[A-Z]{3}|[A-Z]{3}$/gi;
+// A currency code before or after the amount, e.g. "CAD$ 60.00", "CA $12.00", "USD 7.50" or "60.00 CAD".
+const CURRENCY_CODE = /^[A-Z]{1,3}\s*\$|^[A-Z]{3}|[A-Z]{3}$/gi;
 // Dollar signs, thousands separators and the stray spaces OCR puts in amounts like "10. 58".
 const AMOUNT_NOISE = /[$,\s]/g;
 const PLAIN_NUMBER = /^-?(\d+(\.\d*)?|\.\d+)$/;

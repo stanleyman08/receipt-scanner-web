@@ -70,7 +70,7 @@ const MONTH_NAME_THEN_DAY = /^([a-z]{3,})\.?[\s-]+(\d{1,2}),?[\s-]+(\d{4}|\d{2})
 const DAY_THEN_MONTH_NAME = /^(\d{1,2})[\s-]+([a-z]{3,})\.?,?[\s-]+(\d{4}|\d{2})$/i;
 // A weekday before the date or a time after it, as in "Sat, Mar 28, 2026" or "2026-03-28 14:32", is dropped.
 const LEADING_WEEKDAY = /^(mon|tue|wed|thu|fri|sat|sun)[a-z]*\.?,?\s+/i;
-const TRAILING_TIME = /\s+\d{1,2}:\d{2}(:\d{2})?(\s*[ap]\.?m\.?)?$/i;
+const TRAILING_TIME = /,?\s+\d{1,2}:\d{2}(:\d{2})?(\s*[ap]\.?m\.?)?$/i;
 
 // Numeric dates in any other order (28/03/2026, 03/28/2026) are ambiguous, so they stay blank.
 function parseReceiptDate(value: string | null, scannedOn: Date): string | null {
