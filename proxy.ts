@@ -5,6 +5,10 @@ import { type NextRequest, NextResponse } from "next/server";
 // server actions and API routes verify the session against the database. It never redirects away from /login on
 // the cookie alone, since a stale cookie would then bounce between the two pages.
 export function proxy(request: NextRequest) {
+  // Server actions check the session themselves and answer "Your session has ended"; a redirect would break that.
+  if (request.method === "POST" && request.headers.has("next-action")) {
+    return NextResponse.next();
+  }
   if (!getSessionCookie(request)) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
