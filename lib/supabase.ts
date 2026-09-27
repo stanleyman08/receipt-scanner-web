@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Bucket, BucketInsert } from "@/types/bucket";
+import type { Bucket, BucketKey } from "@/types/bucket";
 import type { Receipt, ReceiptInsert } from "@/types/receipt";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -77,7 +77,7 @@ export async function getBuckets(): Promise<Bucket[]> {
   return data as Bucket[];
 }
 
-export async function createBucket(bucket: BucketInsert): Promise<Bucket | null> {
+export async function createBucket(bucket: BucketKey): Promise<Bucket | null> {
   const { data, error } = await supabase.from("buckets").insert([bucket]).select().single();
 
   if (error) {

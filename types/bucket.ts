@@ -6,7 +6,8 @@ export interface Bucket {
   created_at: string;
 }
 
-export interface BucketInsert {
+/** What identifies a bucket: one category in one month. */
+export interface BucketKey {
   year: number;
   month: number;
   category: BucketCategory;

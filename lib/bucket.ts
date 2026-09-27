@@ -1,5 +1,20 @@
-import { type Bucket, compareBuckets } from "@/types/bucket";
+import { type Bucket, type BucketKey, compareBuckets } from "@/types/bucket";
 import type { Receipt } from "@/types/receipt";
+
+interface SuggestBucketInput {
+  /** YYYY-MM-DD, or null when the receipt has no readable date. */
+  receiptDate: string | null;
+  /** The bucket being scanned into, or the receipt's own bucket when editing. */
+  current: BucketKey;
+  pickedByHand: boolean;
+}
+
+// A receipt belongs in its receipt date's month, in the current category, unless a bucket was picked by hand.
+export function suggestBucket({ receiptDate, current, pickedByHand }: SuggestBucketInput): BucketKey {
+  if (pickedByHand || !receiptDate) return current;
+  const [year, month] = receiptDate.split("-").map(Number);
+  return { year, month, category: current.category };
+}
 
 // Filter receipts by bucket_id
 export function filterByBucket(receipts: Receipt[], bucketId: string): Receipt[] {
