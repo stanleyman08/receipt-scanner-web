@@ -13,6 +13,8 @@
     "lint": "biome check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "setup-db": "node --env-file=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/setup-db.mts",
+    "create-account": "node --env-file=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/create-account.mts",
     "prepare": "[ -n \"$CI\" ] || lefthook install"
   },
   "dependencies": {
