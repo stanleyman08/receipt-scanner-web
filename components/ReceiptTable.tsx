@@ -9,8 +9,9 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
+import { formatCents } from "@/lib/money";
 import { type Bucket, formatBucketLabel } from "@/types/bucket";
-import type { Receipt } from "@/types/receipt";
+import { formatReceiptDate, type Receipt } from "@/types/receipt";
 
 interface ReceiptTableProps {
   receipts: Receipt[];
@@ -18,26 +19,21 @@ interface ReceiptTableProps {
   onDelete: (id: string) => void;
   onEdit: (receipt: Receipt) => void;
   deletingId: string | null;
-  isLoading: boolean;
 }
 
 const columnHelper = createColumnHelper<Receipt>();
 
-export default function ReceiptTable({
-  receipts,
-  selectedBucket,
-  onDelete,
-  onEdit,
-  deletingId,
-  isLoading,
-}: ReceiptTableProps) {
+export default function ReceiptTable({ receipts, selectedBucket, onDelete, onEdit, deletingId }: ReceiptTableProps) {
   const [sorting, setSorting] = useState<SortingState>([{ id: "receipt_date", desc: true }]);
 
   const columns = useMemo(
     () => [
       columnHelper.accessor("receipt_date", {
         header: "Date",
-        cell: (info) => info.getValue() || "-",
+        cell: (info) => {
+          const receiptDate = info.getValue();
+          return receiptDate ? formatReceiptDate(receiptDate) : "-";
+        },
         sortingFn: "alphanumeric",
       }),
       columnHelper.accessor("vendor", {
@@ -48,24 +44,17 @@ export default function ReceiptTable({
         header: "Invoice #",
         cell: (info) => info.getValue() || "-",
       }),
-      columnHelper.accessor("subtotal", {
+      columnHelper.accessor("subtotal_cents", {
         header: () => <span className="w-full text-right block">Subtotal</span>,
-        cell: (info) => <span className="block text-right">{info.getValue() || "-"}</span>,
+        cell: (info) => <span className="block text-right">{formatCents(info.getValue())}</span>,
       }),
-      columnHelper.accessor("gst", {
+      columnHelper.accessor("gst_cents", {
         header: () => <span className="w-full text-right block">GST</span>,
-        cell: (info) => <span className="block text-right">{info.getValue() || "-"}</span>,
+        cell: (info) => <span className="block text-right">{formatCents(info.getValue())}</span>,
       }),
-      columnHelper.accessor("total", {
+      columnHelper.accessor("total_cents", {
         header: () => <span className="w-full text-right block">Total</span>,
-        cell: (info) => {
-          const value = info.getValue();
-          return value ? (
-            <span className="block text-right font-medium">{value}</span>
-          ) : (
-            <span className="block text-right">-</span>
-          );
-        },
+        cell: (info) => <span className="block text-right font-medium">{formatCents(info.getValue())}</span>,
       }),
       columnHelper.display({
         id: "actions",
@@ -135,14 +124,6 @@ export default function ReceiptTable({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
 
   if (selectedBucket === null) {
     return (

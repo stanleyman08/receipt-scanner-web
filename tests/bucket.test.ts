@@ -6,6 +6,7 @@ import {
   getUniqueMonthsForYear,
   getUniqueYears,
   sortBuckets,
+  suggestBucket,
 } from "@/lib/bucket";
 import type { Bucket, BucketCategory } from "@/types/bucket";
 
@@ -63,5 +64,27 @@ describe("sidebar lists", () => {
 
   it("lists a month's buckets by category", () => {
     expect(filterBucketsByYearMonth(buckets, 2025, 3).map((b) => b.category)).toEqual(["Food", "Supply"]);
+  });
+});
+
+describe("suggestBucket", () => {
+  const scanningInto = { year: 2026, month: 1, category: "Food" as const };
+
+  it("files a receipt under its receipt date's month, in the category it was scanned into", () => {
+    expect(suggestBucket({ receiptDate: "2025-12-30", current: scanningInto, pickedByHand: false })).toEqual({
+      year: 2025,
+      month: 12,
+      category: "Food",
+    });
+  });
+
+  it("keeps the current bucket when there's no receipt date", () => {
+    expect(suggestBucket({ receiptDate: null, current: scanningInto, pickedByHand: false })).toEqual(scanningInto);
+  });
+
+  it("keeps a bucket picked by hand, whatever the receipt date says", () => {
+    expect(suggestBucket({ receiptDate: "2025-12-30", current: scanningInto, pickedByHand: true })).toEqual(
+      scanningInto,
+    );
   });
 });

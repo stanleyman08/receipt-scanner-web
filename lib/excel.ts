@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import { type Bucket, MONTH_NAMES } from "@/types/bucket";
-import type { Receipt } from "@/types/receipt";
+import { formatReceiptDate, type Receipt } from "@/types/receipt";
 
 const BUSINESS_NAME = "Carino";
 
@@ -12,11 +12,9 @@ const cellBorder: Partial<ExcelJS.Borders> = {
   right: thinBorder,
 };
 
-function parseMonetary(value: string | null): number | null {
-  if (!value) return null;
-  const cleaned = value.replace(/[$,\s]/g, "").replace(/^-$/, "0");
-  const num = parseFloat(cleaned);
-  return isNaN(num) ? null : num;
+// Receipts store whole cents; the sheet shows dollars with a currency format.
+function dollars(cents: number | null): number | null {
+  return cents === null ? null : cents / 100;
 }
 
 function buildSheet(ws: ExcelJS.Worksheet, receipts: Receipt[], bucket: Bucket): void {
@@ -44,13 +42,13 @@ function buildSheet(ws: ExcelJS.Worksheet, receipts: Receipt[], bucket: Bucket):
   const dataStartRow = 4;
   receipts.forEach((receipt, idx) => {
     const row = ws.getRow(dataStartRow + idx);
-    row.getCell(1).value = receipt.receipt_date ?? "";
+    row.getCell(1).value = receipt.receipt_date ? formatReceiptDate(receipt.receipt_date) : "";
     row.getCell(2).value = receipt.vendor ?? "";
     row.getCell(3).value = receipt.invoice_number ?? "";
 
-    const subtotal = parseMonetary(receipt.subtotal);
-    const gst = parseMonetary(receipt.gst);
-    const total = parseMonetary(receipt.total);
+    const subtotal = dollars(receipt.subtotal_cents);
+    const gst = dollars(receipt.gst_cents);
+    const total = dollars(receipt.total_cents);
 
     if (subtotal !== null) row.getCell(4).value = subtotal;
     if (gst !== null) row.getCell(5).value = gst;

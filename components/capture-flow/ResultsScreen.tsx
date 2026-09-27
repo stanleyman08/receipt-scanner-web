@@ -1,6 +1,7 @@
 "use client";
 
-import type { Receipt } from "@/types/receipt";
+import { formatCents } from "@/lib/money";
+import { formatReceiptDate, type Receipt } from "@/types/receipt";
 
 interface ResultsScreenProps {
   imageData: string;
@@ -12,7 +13,7 @@ interface ResultsScreenProps {
 export default function ResultsScreen({ imageData, receipt, onSave, onScanAnother }: ResultsScreenProps) {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
-    return dateStr; // Already normalized to YYYY/MM/DD format
+    return formatReceiptDate(dateStr);
   };
 
   return (
@@ -55,18 +56,18 @@ export default function ResultsScreen({ imageData, receipt, onSave, onScanAnothe
 
             <div className="animate-slide-up" style={{ animationDelay: "50ms" }}>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Total</p>
-              <p className="text-2xl font-bold text-gray-900">{receipt.total || "—"}</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCents(receipt.total_cents)}</p>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="animate-slide-up" style={{ animationDelay: "100ms" }}>
                 <p className="text-xs text-gray-500 uppercase tracking-wide">Subtotal</p>
-                <p className="text-gray-900">{receipt.subtotal || "—"}</p>
+                <p className="text-gray-900">{formatCents(receipt.subtotal_cents)}</p>
               </div>
 
               <div className="animate-slide-up" style={{ animationDelay: "125ms" }}>
                 <p className="text-xs text-gray-500 uppercase tracking-wide">GST</p>
-                <p className="text-gray-900">{receipt.gst || "—"}</p>
+                <p className="text-gray-900">{formatCents(receipt.gst_cents)}</p>
               </div>
 
               <div className="animate-slide-up" style={{ animationDelay: "150ms" }}>

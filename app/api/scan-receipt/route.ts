@@ -1,36 +1,32 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { z } from "zod";
+import { getSession, SIGNED_OUT_MESSAGE } from "@/lib/auth-session";
 import { analyzeReceipt } from "@/lib/textract";
-import type { ParseReceiptResponse } from "@/types/receipt";
+import type { ScanResponse } from "@/types/receipt";
 
-export async function POST(request: NextRequest): Promise<NextResponse<ParseReceiptResponse>> {
+const DATA_URL_PREFIX = /^data:image\/\w+;base64,/;
+const scanRequestSchema = z.object({ image: z.string().min(1) });
+
+export async function POST(request: NextRequest): Promise<NextResponse<ScanResponse>> {
+  if (!(await getSession())) {
+    return NextResponse.json({ success: false, error: SIGNED_OUT_MESSAGE }, { status: 401 });
+  }
+
+  // A body that isn't JSON is treated like one without a photo.
+  const parsed = scanRequestSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ success: false, error: "No photo was sent. Take the photo again." }, { status: 400 });
+  }
+
   try {
-    // Verify user is authenticated
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { image } = await request.json();
-
-    if (!image) {
-      return NextResponse.json({ success: false, error: "No image provided" }, { status: 400 });
-    }
-
-    // Remove base64 data URL prefix if present
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-    const imageBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
-
-    // Analyze receipt with Textract
-    const parsedData = await analyzeReceipt(imageBytes);
-
-    return NextResponse.json({ success: true, data: parsedData });
+    const imageBytes = Buffer.from(parsed.data.image.replace(DATA_URL_PREFIX, ""), "base64");
+    const details = await analyzeReceipt(imageBytes);
+    return NextResponse.json({ success: true, details });
   } catch (error) {
     console.error("Error scanning receipt:", error);
-    return NextResponse.json({ success: false, error: "Failed to scan receipt" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "The receipt couldn't be read. Try again, or retake the photo." },
+      { status: 500 },
+    );
   }
 }

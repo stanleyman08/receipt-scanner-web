@@ -1,5 +1,20 @@
-import { type Bucket, compareBuckets } from "@/types/bucket";
+import { type Bucket, type BucketKey, compareBuckets } from "@/types/bucket";
 import type { Receipt } from "@/types/receipt";
+
+interface SuggestBucketInput {
+  /** YYYY-MM-DD, or null when the receipt has no readable date. */
+  receiptDate: string | null;
+  /** The bucket being scanned into, or the receipt's own bucket when editing. */
+  current: BucketKey;
+  pickedByHand: boolean;
+}
+
+// A receipt belongs in its receipt date's month, in the current category, unless a bucket was picked by hand.
+export function suggestBucket({ receiptDate, current, pickedByHand }: SuggestBucketInput): BucketKey {
+  if (pickedByHand || !receiptDate) return current;
+  const [year, month] = receiptDate.split("-").map(Number);
+  return { year, month, category: current.category };
+}
 
 // Filter receipts by bucket_id
 export function filterByBucket(receipts: Receipt[], bucketId: string): Receipt[] {
@@ -39,23 +54,6 @@ export function bucketExists(buckets: Bucket[], year: number, month: number, cat
 export function getUniqueYears(buckets: Bucket[]): number[] {
   const years = new Set(buckets.map((b) => b.year));
   return [...years].sort((a, b) => b - a);
-}
-
-// Group buckets by year, each group sorted by month desc / category asc
-export function groupBucketsByYear(buckets: Bucket[]): Map<number, Bucket[]> {
-  const map = new Map<number, Bucket[]>();
-  for (const bucket of buckets) {
-    const group = map.get(bucket.year);
-    if (group) {
-      group.push(bucket);
-    } else {
-      map.set(bucket.year, [bucket]);
-    }
-  }
-  for (const [year, group] of map) {
-    map.set(year, group.sort(compareBuckets));
-  }
-  return map;
 }
 
 // Total receipt count per year for display on year tabs
