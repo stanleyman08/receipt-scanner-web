@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# agent skills fetched from skills-lock.json (.claude/skills links into .agents/skills)
+.agents/
+.claude/skills/
