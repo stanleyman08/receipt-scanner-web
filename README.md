@@ -49,11 +49,11 @@ pnpm setup-db
 
 ### 4. The shared account
 
-Everyone signs in with one shared account; there is no sign-up page. Create it, or reset its password, with a password of at least 8 characters. Resetting signs out every device.
+Everyone signs in with one shared account; there is no sign-up page. Create it, or reset its password, with a password of 8 to 128 characters. A reset must use the account's email (the script refuses to create a second account), and it signs out every device.
 
 ```bash
 read -r ACCOUNT_EMAIL; read -rs ACCOUNT_PASSWORD; export ACCOUNT_EMAIL ACCOUNT_PASSWORD
-pnpm create-account && unset ACCOUNT_PASSWORD
+pnpm create-account; unset ACCOUNT_PASSWORD
 ```
 
 ### 5. A database branch for local development
