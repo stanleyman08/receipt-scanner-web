@@ -1,63 +1,43 @@
 "use client";
 
 import { useId, useState } from "react";
-import type { EditedReceiptData, ParsedReceiptData } from "@/types/receipt";
+import BucketPicker from "@/components/BucketPicker";
+import { useReceiptForm } from "@/components/useReceiptForm";
+import type { Bucket } from "@/types/bucket";
+import type { ReceiptReview } from "@/types/capture-flow";
+
+const AMOUNT_ERROR = "Enter amounts as plain numbers, like 12.50.";
+const LABEL_CLASS = "block text-xs text-gray-500 uppercase tracking-wide mb-1";
+const INPUT_CLASS =
+  "w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
 
 interface EditScreenProps {
   imageData: string;
-  parsedData: ParsedReceiptData;
-  onConfirm: (data: EditedReceiptData) => void;
+  review: ReceiptReview;
+  buckets: Bucket[];
+  /** Why the last save failed, if it did. */
+  error?: string;
+  onConfirm: (review: ReceiptReview) => void;
   onRetake: () => void;
 }
 
-export default function EditScreen({ imageData, parsedData, onConfirm, onRetake }: EditScreenProps) {
+export default function EditScreen({ imageData, review, buckets, error, onConfirm, onRetake }: EditScreenProps) {
   const idPrefix = useId();
-  const [formData, setFormData] = useState({
-    vendor: parsedData.vendor || "",
-    receipt_date: parsedData.receiptDate || "",
-    subtotal: parsedData.subtotal || "",
-    gst: parsedData.gst || "",
-    total: parsedData.total || "",
-    invoice_number: parsedData.invoiceNumber || "",
-  });
-
+  const { fields, setField, bucket, pickBucket, toReview } = useReceiptForm(review);
+  const [amountError, setAmountError] = useState<string | null>(null);
   const [showFullImage, setShowFullImage] = useState(false);
 
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const formatCurrency = (value: string): string => {
-    const trimmed = value.trim();
-    if (!trimmed) return trimmed;
-
-    // Remove existing $ sign and parse the number
-    const numStr = trimmed.replace(/^\$/, "");
-    const num = parseFloat(numStr);
-
-    // If it's a valid number, format with 2 decimal places
-    if (!isNaN(num)) {
-      return "$" + num.toFixed(2);
-    }
-
-    // If not a valid number, just add $ prefix if it starts with a digit
-    if (!trimmed.startsWith("$") && /^\d/.test(trimmed)) {
-      return "$" + trimmed;
-    }
-    return trimmed;
-  };
-
   const handleSubmit = () => {
-    const receiptData: EditedReceiptData = {
-      vendor: formData.vendor || null,
-      receipt_date: formData.receipt_date || null,
-      subtotal: formatCurrency(formData.subtotal) || null,
-      gst: formatCurrency(formData.gst) || null,
-      total: formatCurrency(formData.total) || null,
-      invoice_number: formData.invoice_number || null,
-    };
-    onConfirm(receiptData);
+    const reviewed = toReview();
+    if (!reviewed) {
+      setAmountError(AMOUNT_ERROR);
+      return;
+    }
+    setAmountError(null);
+    onConfirm(reviewed);
   };
+
+  const message = amountError ?? error;
 
   return (
     <>
@@ -96,7 +76,7 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
               {/* biome-ignore lint/performance/noImgElement: a camera data URL, which next/image can't optimize */}
               <img src={imageData} alt="Receipt thumbnail" className="w-16 h-20 object-cover rounded-lg shadow" />
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-gray-900 truncate">{formData.vendor || "Unknown Vendor"}</p>
+                <p className="font-medium text-gray-900 truncate">{fields.vendor || "Unknown Vendor"}</p>
                 <p className="text-sm text-blue-500">Tap to view full image</p>
               </div>
               <svg
@@ -117,113 +97,112 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
 
             {/* Editable fields */}
             <div className="p-4 space-y-4">
-              {/* Vendor */}
               <div>
-                <label
-                  htmlFor={`${idPrefix}-vendor`}
-                  className="block text-xs text-gray-500 uppercase tracking-wide mb-1"
-                >
+                <label htmlFor={`${idPrefix}-vendor`} className={LABEL_CLASS}>
                   Vendor
                 </label>
                 <input
                   id={`${idPrefix}-vendor`}
                   type="text"
-                  value={formData.vendor}
-                  onChange={(e) => handleInputChange("vendor", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={fields.vendor}
+                  onChange={(e) => setField("vendor", e.target.value)}
+                  className={INPUT_CLASS}
                   placeholder="Enter vendor name"
                 />
               </div>
 
-              {/* Date */}
               <div>
-                <label
-                  htmlFor={`${idPrefix}-date`}
-                  className="block text-xs text-gray-500 uppercase tracking-wide mb-1"
-                >
+                <label htmlFor={`${idPrefix}-date`} className={LABEL_CLASS}>
                   Date
                 </label>
                 <input
                   id={`${idPrefix}-date`}
-                  type="text"
-                  value={formData.receipt_date}
-                  onChange={(e) => handleInputChange("receipt_date", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="YYYY/MM/DD"
+                  type="date"
+                  value={fields.receiptDate}
+                  onChange={(e) => setField("receiptDate", e.target.value)}
+                  className={INPUT_CLASS}
                 />
               </div>
 
-              {/* Amount fields in grid */}
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label
-                    htmlFor={`${idPrefix}-subtotal`}
-                    className="block text-xs text-gray-500 uppercase tracking-wide mb-1"
-                  >
+                  <label htmlFor={`${idPrefix}-subtotal`} className={LABEL_CLASS}>
                     Subtotal
                   </label>
                   <input
                     id={`${idPrefix}-subtotal`}
                     type="text"
-                    value={formData.subtotal}
-                    onChange={(e) => handleInputChange("subtotal", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="$0.00"
+                    inputMode="decimal"
+                    value={fields.subtotal}
+                    onChange={(e) => setField("subtotal", e.target.value)}
+                    className={INPUT_CLASS}
+                    placeholder="0.00"
                   />
                 </div>
                 <div>
-                  <label
-                    htmlFor={`${idPrefix}-gst`}
-                    className="block text-xs text-gray-500 uppercase tracking-wide mb-1"
-                  >
+                  <label htmlFor={`${idPrefix}-gst`} className={LABEL_CLASS}>
                     GST
                   </label>
                   <input
                     id={`${idPrefix}-gst`}
                     type="text"
-                    value={formData.gst}
-                    onChange={(e) => handleInputChange("gst", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="$0.00"
+                    inputMode="decimal"
+                    value={fields.gst}
+                    onChange={(e) => setField("gst", e.target.value)}
+                    className={INPUT_CLASS}
+                    placeholder="0.00"
                   />
                 </div>
                 <div>
-                  <label
-                    htmlFor={`${idPrefix}-total`}
-                    className="block text-xs text-gray-500 uppercase tracking-wide mb-1"
-                  >
+                  <label htmlFor={`${idPrefix}-total`} className={LABEL_CLASS}>
                     Total
                   </label>
                   <input
                     id={`${idPrefix}-total`}
                     type="text"
-                    value={formData.total}
-                    onChange={(e) => handleInputChange("total", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold"
-                    placeholder="$0.00"
+                    inputMode="decimal"
+                    value={fields.total}
+                    onChange={(e) => setField("total", e.target.value)}
+                    className={`${INPUT_CLASS} font-semibold`}
+                    placeholder="0.00"
                   />
                 </div>
               </div>
 
-              {/* Invoice Number */}
               <div>
-                <label
-                  htmlFor={`${idPrefix}-invoice`}
-                  className="block text-xs text-gray-500 uppercase tracking-wide mb-1"
-                >
+                <label htmlFor={`${idPrefix}-invoice`} className={LABEL_CLASS}>
                   Invoice #
                 </label>
                 <input
                   id={`${idPrefix}-invoice`}
                   type="text"
-                  value={formData.invoice_number}
-                  onChange={(e) => handleInputChange("invoice_number", e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={fields.invoiceNumber}
+                  onChange={(e) => setField("invoiceNumber", e.target.value)}
+                  className={INPUT_CLASS}
                   placeholder="Enter invoice number"
+                />
+              </div>
+
+              <div>
+                <label htmlFor={`${idPrefix}-bucket`} className={LABEL_CLASS}>
+                  Bucket
+                </label>
+                <BucketPicker
+                  id={`${idPrefix}-bucket`}
+                  value={bucket}
+                  buckets={buckets}
+                  onChange={pickBucket}
+                  className={INPUT_CLASS}
                 />
               </div>
             </div>
           </div>
+
+          {message && (
+            <p role="alert" className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {message}
+            </p>
+          )}
 
           {/* Actions */}
           <div className="flex gap-4 mt-6">

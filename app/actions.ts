@@ -5,7 +5,7 @@ import { getSession } from "@/lib/auth-session";
 import { getSql } from "@/lib/db/sql";
 import { createBucket, deleteReceipt, saveReceipt, updateReceipt } from "@/lib/receipt-store";
 import { BUCKET_CATEGORIES, type Bucket, type BucketKey } from "@/types/bucket";
-import type { ReceiptDetails, SavedReceipt } from "@/types/receipt";
+import type { Receipt, ReceiptDetails } from "@/types/receipt";
 
 // Errors come back as values: Next.js hides thrown messages from the browser in production.
 export type ActionResult<T> = { ok: true; value: T } | { ok: false; error: string };
@@ -41,10 +41,7 @@ export async function createBucketAction(key: BucketKey): Promise<ActionResult<B
   return { ok: true, value: await createBucket(getSql(), parsed.data) };
 }
 
-export async function saveReceiptAction(
-  details: ReceiptDetails,
-  bucket: BucketKey,
-): Promise<ActionResult<SavedReceipt>> {
+export async function saveReceiptAction(details: ReceiptDetails, bucket: BucketKey): Promise<ActionResult<Receipt>> {
   if (!(await isSignedIn())) return { ok: false, error: SIGNED_OUT };
   const parsedDetails = receiptDetailsSchema.safeParse(details);
   const parsedBucket = bucketKeySchema.safeParse(bucket);
@@ -56,7 +53,7 @@ export async function updateReceiptAction(
   id: string,
   details: ReceiptDetails,
   bucket: BucketKey,
-): Promise<ActionResult<SavedReceipt>> {
+): Promise<ActionResult<Receipt>> {
   if (!(await isSignedIn())) return { ok: false, error: SIGNED_OUT };
   const parsedId = receiptIdSchema.safeParse(id);
   const parsedDetails = receiptDetailsSchema.safeParse(details);

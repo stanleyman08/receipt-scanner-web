@@ -20,8 +20,6 @@
   "dependencies": {
     "@aws-sdk/client-textract": "^3.980.0",
     "@neondatabase/serverless": "^1.1.0",
-    "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.93.3",
     "@tanstack/react-table": "^8.21.3",
     "better-auth": "1.7.6",
     "exceljs": "^4.4.0",

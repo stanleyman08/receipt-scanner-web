@@ -30,11 +30,11 @@ describe("readReceipt", () => {
 
     expect(fields).toEqual({
       vendor: "Corner Grocery",
-      receiptDate: "2026-03-28",
-      invoiceNumber: "A-1042",
-      subtotalCents: 2000,
-      gstCents: 100,
-      totalCents: 2100,
+      receipt_date: "2026-03-28",
+      invoice_number: "A-1042",
+      subtotal_cents: 2000,
+      gst_cents: 100,
+      total_cents: 2100,
     });
   });
 
@@ -45,7 +45,7 @@ describe("readReceipt", () => {
     ["10. 58", 1058],
     ["60", 6000],
   ])("reads the amount %s as %i cents", (written, cents) => {
-    expect(readReceipt(receipt(field("TOTAL", written))).totalCents).toBe(cents);
+    expect(readReceipt(receipt(field("TOTAL", written))).total_cents).toBe(cents);
   });
 
   it.each([
@@ -59,7 +59,7 @@ describe("readReceipt", () => {
     ["28 Mar 2026", "2026-03-28"],
     ["28-Mar-2026", "2026-03-28"],
   ])("reads the receipt date %s as %s", (written, date) => {
-    expect(readReceipt(receipt(field("INVOICE_RECEIPT_DATE", written))).receiptDate).toBe(date);
+    expect(readReceipt(receipt(field("INVOICE_RECEIPT_DATE", written))).receipt_date).toBe(date);
   });
 
   it.each([
@@ -69,32 +69,32 @@ describe("readReceipt", () => {
     ["2026-13-01", "a month that doesn't exist"],
     ["next Tuesday", "words"],
   ])("leaves the receipt date %s blank (%s)", (written) => {
-    expect(readReceipt(receipt(field("INVOICE_RECEIPT_DATE", written))).receiptDate).toBeNull();
+    expect(readReceipt(receipt(field("INVOICE_RECEIPT_DATE", written))).receipt_date).toBeNull();
   });
 
   it("works out a missing subtotal as the total minus GST", () => {
     const fields = readReceipt(receipt(field("TAX", "$0.50"), field("TOTAL", "$10.50")));
-    expect(fields.subtotalCents).toBe(1000);
+    expect(fields.subtotal_cents).toBe(1000);
   });
 
   it("uses the total as the subtotal when the receipt shows neither subtotal nor GST", () => {
     const fields = readReceipt(receipt(field("TOTAL", "$12.00")));
-    expect(fields).toMatchObject({ subtotalCents: 1200, gstCents: 0 });
+    expect(fields).toMatchObject({ subtotal_cents: 1200, gst_cents: 0 });
   });
 
   it("finds GST by its label, but never takes a GST registration number as the amount", () => {
     const fields = readReceipt(
       receipt(field("VENDOR_GST_NUMBER", "812345678", "GST #"), field("OTHER", "$0.75", "GST 5%")),
     );
-    expect(fields.gstCents).toBe(75);
+    expect(fields.gst_cents).toBe(75);
   });
 
   it("prefers an invoice number found by its label over the receipt ID type", () => {
     const fields = readReceipt(receipt(field("RECEIPT_ID", "000123"), field("OTHER", "INV-77", "Invoice Number")));
-    expect(fields.invoiceNumber).toBe("INV-77");
+    expect(fields.invoice_number).toBe("INV-77");
   });
 
   it("leaves an unreadable amount blank", () => {
-    expect(readReceipt(receipt(field("TOTAL", "see attached"))).totalCents).toBeNull();
+    expect(readReceipt(receipt(field("TOTAL", "see attached"))).total_cents).toBeNull();
   });
 });

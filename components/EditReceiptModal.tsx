@@ -1,83 +1,54 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
+import BucketPicker from "@/components/BucketPicker";
+import { useReceiptForm } from "@/components/useReceiptForm";
+import type { Bucket, BucketKey } from "@/types/bucket";
+import type { ReceiptReview } from "@/types/capture-flow";
 import type { Receipt } from "@/types/receipt";
 
+const AMOUNT_ERROR = "Enter amounts as plain numbers, like 12.50.";
+const LABEL_CLASS = "block text-sm font-medium text-gray-700 mb-1";
+const INPUT_CLASS =
+  "w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
+
 interface EditReceiptModalProps {
-  receipt: Receipt | null;
-  isOpen: boolean;
+  receipt: Receipt;
+  /** The bucket the receipt is filed in now. */
+  receiptBucket: BucketKey;
+  buckets: Bucket[];
   isSaving: boolean;
   onClose: () => void;
-  onSave: (id: string, updates: Partial<Receipt>) => void;
+  onSave: (id: string, review: ReceiptReview) => void;
 }
 
-export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, onSave }: EditReceiptModalProps) {
+// Rendered with key={receipt.id}, so the form starts from the receipt it was opened for.
+export default function EditReceiptModal({
+  receipt,
+  receiptBucket,
+  buckets,
+  isSaving,
+  onClose,
+  onSave,
+}: EditReceiptModalProps) {
   const idPrefix = useId();
-  const [formData, setFormData] = useState({
-    vendor: "",
-    receipt_date: "",
-    subtotal: "",
-    gst: "",
-    total: "",
-    invoice_number: "",
+  const { fields, setField, bucket, pickBucket, toReview } = useReceiptForm({
+    details: receipt,
+    bucket: receiptBucket,
+    pickedByHand: false,
   });
+  const [amountError, setAmountError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (receipt) {
-      // Use timeout to avoid synchronous setState in effect
-      const timeoutId = setTimeout(() => {
-        setFormData({
-          vendor: receipt.vendor || "",
-          receipt_date: receipt.receipt_date || "",
-          subtotal: receipt.subtotal || "",
-          gst: receipt.gst || "",
-          total: receipt.total || "",
-          invoice_number: receipt.invoice_number || "",
-        });
-      }, 0);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [receipt]);
-
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const formatCurrency = (value: string): string => {
-    const trimmed = value.trim();
-    if (!trimmed) return trimmed;
-
-    // Remove existing $ sign and parse the number
-    const numStr = trimmed.replace(/^\$/, "");
-    const num = parseFloat(numStr);
-
-    // If it's a valid number, format with 2 decimal places
-    if (!isNaN(num)) {
-      return "$" + num.toFixed(2);
-    }
-
-    // If not a valid number, just add $ prefix if it starts with a digit
-    if (!trimmed.startsWith("$") && /^\d/.test(trimmed)) {
-      return "$" + trimmed;
-    }
-    return trimmed;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!receipt) return;
-
-    onSave(receipt.id, {
-      vendor: formData.vendor || null,
-      receipt_date: formData.receipt_date || null,
-      subtotal: formatCurrency(formData.subtotal) || null,
-      gst: formatCurrency(formData.gst) || null,
-      total: formatCurrency(formData.total) || null,
-      invoice_number: formData.invoice_number || null,
-    });
+    const reviewed = toReview();
+    if (!reviewed) {
+      setAmountError(AMOUNT_ERROR);
+      return;
+    }
+    setAmountError(null);
+    onSave(receipt.id, reviewed);
   };
-
-  if (!isOpen || !receipt) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -109,93 +80,110 @@ export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, o
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {/* Vendor */}
           <div>
-            <label htmlFor={`${idPrefix}-vendor`} className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor={`${idPrefix}-vendor`} className={LABEL_CLASS}>
               Vendor
             </label>
             <input
               id={`${idPrefix}-vendor`}
               type="text"
-              value={formData.vendor}
-              onChange={(e) => handleInputChange("vendor", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={fields.vendor}
+              onChange={(e) => setField("vendor", e.target.value)}
+              className={INPUT_CLASS}
               placeholder="Enter vendor name"
             />
           </div>
 
-          {/* Date */}
           <div>
-            <label htmlFor={`${idPrefix}-date`} className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor={`${idPrefix}-date`} className={LABEL_CLASS}>
               Date
             </label>
             <input
               id={`${idPrefix}-date`}
-              type="text"
-              value={formData.receipt_date}
-              onChange={(e) => handleInputChange("receipt_date", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="YYYY/MM/DD"
+              type="date"
+              value={fields.receiptDate}
+              onChange={(e) => setField("receiptDate", e.target.value)}
+              className={INPUT_CLASS}
             />
           </div>
 
-          {/* Amount fields */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label htmlFor={`${idPrefix}-subtotal`} className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`${idPrefix}-subtotal`} className={LABEL_CLASS}>
                 Subtotal
               </label>
               <input
                 id={`${idPrefix}-subtotal`}
                 type="text"
-                value={formData.subtotal}
-                onChange={(e) => handleInputChange("subtotal", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="$0.00"
+                inputMode="decimal"
+                value={fields.subtotal}
+                onChange={(e) => setField("subtotal", e.target.value)}
+                className={INPUT_CLASS}
+                placeholder="0.00"
               />
             </div>
             <div>
-              <label htmlFor={`${idPrefix}-gst`} className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`${idPrefix}-gst`} className={LABEL_CLASS}>
                 GST
               </label>
               <input
                 id={`${idPrefix}-gst`}
                 type="text"
-                value={formData.gst}
-                onChange={(e) => handleInputChange("gst", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="$0.00"
+                inputMode="decimal"
+                value={fields.gst}
+                onChange={(e) => setField("gst", e.target.value)}
+                className={INPUT_CLASS}
+                placeholder="0.00"
               />
             </div>
             <div>
-              <label htmlFor={`${idPrefix}-total`} className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`${idPrefix}-total`} className={LABEL_CLASS}>
                 Total
               </label>
               <input
                 id={`${idPrefix}-total`}
                 type="text"
-                value={formData.total}
-                onChange={(e) => handleInputChange("total", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold"
-                placeholder="$0.00"
+                inputMode="decimal"
+                value={fields.total}
+                onChange={(e) => setField("total", e.target.value)}
+                className={`${INPUT_CLASS} font-semibold`}
+                placeholder="0.00"
               />
             </div>
           </div>
 
-          {/* Invoice Number */}
           <div>
-            <label htmlFor={`${idPrefix}-invoice`} className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor={`${idPrefix}-invoice`} className={LABEL_CLASS}>
               Invoice #
             </label>
             <input
               id={`${idPrefix}-invoice`}
               type="text"
-              value={formData.invoice_number}
-              onChange={(e) => handleInputChange("invoice_number", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={fields.invoiceNumber}
+              onChange={(e) => setField("invoiceNumber", e.target.value)}
+              className={INPUT_CLASS}
               placeholder="Enter invoice number"
             />
           </div>
+
+          <div>
+            <label htmlFor={`${idPrefix}-bucket`} className={LABEL_CLASS}>
+              Bucket
+            </label>
+            <BucketPicker
+              id={`${idPrefix}-bucket`}
+              value={bucket}
+              buckets={buckets}
+              onChange={pickBucket}
+              className={INPUT_CLASS}
+            />
+          </div>
+
+          {amountError && (
+            <p role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {amountError}
+            </p>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3 pt-4">

@@ -31,7 +31,7 @@ export const MONTH_NAMES = [
   "December",
 ] as const;
 
-export function formatBucketLabel(bucket: Bucket): string {
+export function formatBucketLabel(bucket: BucketKey): string {
   const monthName = MONTH_NAMES[bucket.month - 1];
   return `${bucket.year} / ${monthName} / ${bucket.category}`;
 }

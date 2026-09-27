@@ -1,6 +1,6 @@
 import type { Sql } from "@/lib/db/sql";
 import type { Bucket, BucketCategory, BucketKey } from "@/types/bucket";
-import type { ReceiptDetails, SavedReceipt } from "@/types/receipt";
+import type { Receipt, ReceiptDetails } from "@/types/receipt";
 
 // Reads and writes buckets and receipts. Every function takes the SQL runner, so tests can run them on PGlite.
 
@@ -20,7 +20,7 @@ export async function createBucket(sql: Sql, key: BucketKey): Promise<Bucket> {
   return toBucket(row);
 }
 
-export async function listReceipts(sql: Sql): Promise<SavedReceipt[]> {
+export async function listReceipts(sql: Sql): Promise<Receipt[]> {
   const rows = await sql`
     SELECT id, bucket_id, vendor, receipt_date::text AS receipt_date, invoice_number,
            subtotal_cents, gst_cents, total_cents, created_at
@@ -30,7 +30,7 @@ export async function listReceipts(sql: Sql): Promise<SavedReceipt[]> {
 }
 
 // Files a receipt into its bucket, creating the bucket if it doesn't exist yet, in a single statement.
-export async function saveReceipt(sql: Sql, details: ReceiptDetails, bucket: BucketKey): Promise<SavedReceipt> {
+export async function saveReceipt(sql: Sql, details: ReceiptDetails, bucket: BucketKey): Promise<Receipt> {
   const [row] = await sql`
     WITH bucket AS (
       INSERT INTO buckets (year, month, category) VALUES (${bucket.year}, ${bucket.month}, ${bucket.category})
@@ -52,7 +52,7 @@ export async function updateReceipt(
   id: string,
   details: ReceiptDetails,
   bucket: BucketKey,
-): Promise<SavedReceipt | null> {
+): Promise<Receipt | null> {
   const [row] = await sql`
     WITH target AS (SELECT id FROM receipts WHERE id = ${id}::uuid),
     bucket AS (
@@ -83,7 +83,7 @@ export async function deleteReceipt(sql: Sql, id: string): Promise<boolean> {
   return rows.length > 0;
 }
 
-function toReceipt(row: Record<string, unknown>): SavedReceipt {
+function toReceipt(row: Record<string, unknown>): Receipt {
   return {
     id: String(row.id),
     bucket_id: String(row.bucket_id),

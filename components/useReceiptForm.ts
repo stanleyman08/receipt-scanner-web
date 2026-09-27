@@ -1,0 +1,59 @@
+"use client";
+
+import { useState } from "react";
+import { suggestBucket } from "@/lib/bucket";
+import { centsToInput, parseAmountCents } from "@/lib/money";
+import type { BucketKey } from "@/types/bucket";
+import type { ReceiptReview } from "@/types/capture-flow";
+
+export type ReceiptFormField = "vendor" | "receiptDate" | "invoiceNumber" | "subtotal" | "gst" | "total";
+
+// Shared by the review screen and the edit dialog: text fields for the details, and a bucket that follows the
+// receipt date until one is picked by hand.
+export function useReceiptForm(initial: ReceiptReview) {
+  const [fields, setFields] = useState({
+    vendor: initial.details.vendor ?? "",
+    receiptDate: initial.details.receipt_date ?? "",
+    invoiceNumber: initial.details.invoice_number ?? "",
+    subtotal: centsToInput(initial.details.subtotal_cents),
+    gst: centsToInput(initial.details.gst_cents),
+    total: centsToInput(initial.details.total_cents),
+  });
+  const [bucket, setBucket] = useState(initial.bucket);
+  const [pickedByHand, setPickedByHand] = useState(initial.pickedByHand);
+
+  const setField = (field: ReceiptFormField, value: string) => {
+    setFields((prev) => ({ ...prev, [field]: value }));
+    if (field === "receiptDate") {
+      setBucket((current) => suggestBucket({ receiptDate: value || null, current, pickedByHand }));
+    }
+  };
+
+  const pickBucket = (picked: BucketKey) => {
+    setBucket(picked);
+    setPickedByHand(true);
+  };
+
+  /** The reviewed receipt, or null when an amount that was filled in isn't a plain number. */
+  const toReview = (): ReceiptReview | null => {
+    const texts = [fields.subtotal, fields.gst, fields.total];
+    const amounts = texts.map((text) => (text.trim() === "" ? null : parseAmountCents(text)));
+    if (texts.some((text, i) => text.trim() !== "" && amounts[i] === null)) return null;
+
+    const [subtotal_cents, gst_cents, total_cents] = amounts;
+    return {
+      details: {
+        vendor: fields.vendor.trim() || null,
+        receipt_date: fields.receiptDate || null,
+        invoice_number: fields.invoiceNumber.trim() || null,
+        subtotal_cents,
+        gst_cents,
+        total_cents,
+      },
+      bucket,
+      pickedByHand,
+    };
+  };
+
+  return { fields, setField, bucket, pickBucket, toReview };
+}

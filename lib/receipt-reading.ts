@@ -1,15 +1,6 @@
 import type { ExpenseDocument, ExpenseField } from "@aws-sdk/client-textract";
-
-// The receipt fields a scan pre-fills. Each is null when the receipt didn't show it clearly.
-export interface ReceiptFields {
-  vendor: string | null;
-  /** The purchase date as YYYY-MM-DD. */
-  receiptDate: string | null;
-  invoiceNumber: string | null;
-  subtotalCents: number | null;
-  gstCents: number | null;
-  totalCents: number | null;
-}
+import { parseAmountCents } from "@/lib/money";
+import type { ReceiptDetails } from "@/types/receipt";
 
 const VENDOR_TYPES = ["VENDOR_NAME", "VENDOR", "NAME"];
 const DATE_TYPES = ["INVOICE_RECEIPT_DATE", "DATE", "TRANSACTION_DATE"];
@@ -22,7 +13,8 @@ const GST_LABELS = ["GST", "TAX"];
 const TAX_ID_TYPES = ["TAX_PAYER_ID", "VENDOR_GST_NUMBER", "GST_NUMBER", "TAX_ID"];
 const TOTAL_TYPES = ["TOTAL", "AMOUNT_DUE", "GRAND_TOTAL"];
 
-export function readReceipt(document: ExpenseDocument): ReceiptFields {
+/** The details a scan pre-fills from Textract's AnalyzeExpense result. Anything unreadable stays null. */
+export function readReceipt(document: ExpenseDocument): ReceiptDetails {
   const fields = document.SummaryFields ?? [];
   const totalCents = parseAmountCents(valueOfType(fields, TOTAL_TYPES));
   const gstCents =
@@ -31,12 +23,12 @@ export function readReceipt(document: ExpenseDocument): ReceiptFields {
 
   return {
     vendor: valueOfType(fields, VENDOR_TYPES),
-    receiptDate: parseReceiptDate(valueOfType(fields, DATE_TYPES)),
-    invoiceNumber: valueOfLabel(fields, INVOICE_LABELS) ?? valueOfType(fields, INVOICE_TYPES),
+    receipt_date: parseReceiptDate(valueOfType(fields, DATE_TYPES)),
+    invoice_number: valueOfLabel(fields, INVOICE_LABELS) ?? valueOfType(fields, INVOICE_TYPES),
     // Receipts without a subtotal line: the subtotal is what's left after GST.
-    subtotalCents: subtotalCents ?? (totalCents === null ? null : totalCents - gstCents),
-    gstCents,
-    totalCents,
+    subtotal_cents: subtotalCents ?? (totalCents === null ? null : totalCents - gstCents),
+    gst_cents: gstCents,
+    total_cents: totalCents,
   };
 }
 
@@ -68,18 +60,6 @@ function cleanValue(field: ExpenseField): string | null {
   const text = field.ValueDetection?.Text;
   if (!text) return null;
   return text.replace(/\s+/g, " ").trim();
-}
-
-// A currency code before or after the amount, e.g. "CAD$ 60.00", "USD 7.50" or "60.00 CAD".
-const CURRENCY_CODE = /^[A-Z]{3}\$?|[A-Z]{3}$/gi;
-// Dollar signs, thousands separators and the stray spaces OCR puts in amounts like "10. 58".
-const AMOUNT_NOISE = /[$,\s]/g;
-const PLAIN_NUMBER = /^-?(\d+(\.\d*)?|\.\d+)$/;
-
-function parseAmountCents(value: string | null): number | null {
-  if (!value) return null;
-  const number = value.trim().replace(CURRENCY_CODE, "").replace(AMOUNT_NOISE, "");
-  return PLAIN_NUMBER.test(number) ? Math.round(Number(number) * 100) : null;
 }
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
