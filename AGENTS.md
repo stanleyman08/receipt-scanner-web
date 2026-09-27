@@ -19,17 +19,18 @@ Single-context: one `CONTEXT.md` plus `docs/adr/` at the repo root. See `docs/ag
 Every implementation or fix, whether it arrives as `mattpocock-skills:implement`, an issue number or a plain request, follows the same shape. Nobody has to ask for it.
 
 1. **Before writing code, load the skills the change touches:**
-   - `frontend-design` for new UI or any visual change, `vercel-react-best-practices` for React code, and `vercel:nextjs` for anything in `app/` or `middleware.ts`.
+   - `frontend-design` for new UI or any visual change, `vercel-react-best-practices` for React code, and `vercel:nextjs` for anything in `app/` or `proxy.ts`.
+   - `neon-postgres` for anything in `lib/db/`, `lib/receipt-store.ts` or `scripts/`, or the tables. The Neon skills are pinned in `skills-lock.json` but not committed (`.agents/` is gitignored), so install them from `neondatabase/agent-skills` if `.agents/skills/` is missing. After upgrading Better Auth, regenerate its tables in `lib/db/schema.ts` as the comment there says.
    - `vercel:vercel-functions` for the route handlers in `app/api/`, which run as Vercel Functions.
    - `vercel:env-vars` for environment variable changes, and `vercel:deployments-cicd` for deploy or Git integration changes.
    - `mattpocock-skills:tdd` for any behaviour change: write or extend the test first (`tests/` for code in `lib/`, a `*.test.tsx` file next to the component for UI).
    - `mattpocock-skills:diagnosing-bugs` for any fix: find the root cause before patching.
    - Any other installed skill that directly applies. Loading one costs little; missing one costs a review round.
-2. **Verify** (Node 24 from `.nvmrc`, pnpm only): `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build` must pass. Lefthook runs Biome on every commit and the tests plus the type check on every push. For UI changes, also check the page in a browser with `pnpm dev`, at phone and desktop widths. Dev has no local stand-in or test account: it uses the Supabase project and AWS credentials in `.env.local`. Ask the user to sign in, and ask before saving, editing or deleting receipts or running a scan (each scan is a billed Textract call).
+2. **Verify** (Node 24 from `.nvmrc`, pnpm only): `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build` must pass. Lefthook runs Biome on every commit and the tests plus the type check on every push. For UI changes, also check the page in a browser with `pnpm dev`, at phone and desktop widths. `pnpm dev` must use the Neon `dev` branch from `.env.development.local`; if that file is missing, stop and ask rather than run against the main (production) branch. There's one shared account and no test account, so ask the user to sign in, and ask before running a scan (each scan is a billed Textract call).
 3. **After the change passes, review the diff with:**
    - `mattpocock-skills:code-review` for standards and spec, and `code-review` for bugs.
    - `web-design-guidelines` when it touched UI.
-   - `security-review` when it touched sign-in or the session check (`middleware.ts`, `lib/supabase/`, `app/login/`), the route handlers in `app/api/`, Supabase queries or the RLS policies in `database/`, environment variables, or the AWS credentials in `lib/textract.ts`.
+   - `security-review` when it touched sign-in or the session checks (`proxy.ts`, `lib/auth.ts`, `lib/auth-session.ts`, `app/login/`, `components/LoginForm.tsx`, `scripts/create-account.mts`), the server actions in `app/actions.ts`, the route handlers in `app/api/`, the SQL in `lib/receipt-store.ts` or `lib/db/`, environment variables, or the AWS credentials in `lib/textract.ts`.
    - A check of the diff against the skills loaded in step 1.
    Fix the important violations before reporting done. Mention the minor ones and leave them.
 

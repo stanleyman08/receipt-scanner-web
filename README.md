@@ -1,26 +1,26 @@
-# Receipt Scanner Web
+# Receipt Scanner
 
-A web application for scanning receipts using your phone's camera, extracting data with AWS Textract, and storing/exporting receipt information. Built with Next.js 16, React 19, and Supabase.
+A web application for scanning receipts using your phone's camera. It reads each receipt with AWS Textract, files it into a bucket (one category for one month), and exports a bucket or a whole year to Excel. Built with Next.js 16, React 19, Neon Postgres and Better Auth.
 
 ## Features
 
-- Scan receipts using your device's camera
+- Scan receipts using your device's camera, or upload a photo
 - Automatic data extraction (vendor, date, subtotal, GST, total, invoice number)
-- Cloud storage with Supabase
-- Email/password authentication
-- Export receipts to Excel
+- Receipts filed into the bucket for their date, with a picker to choose another
+- One shared account for everyone at the business, with sign-in attempts rate-limited
+- Export a bucket, or a whole year, to Excel
 - Responsive design for mobile and desktop
 
 ## Prerequisites
 
 - Node.js 24 (see `.nvmrc`)
 - pnpm (the version is pinned in `package.json`)
-- AWS account with Textract access
-- Supabase account
+- The Vercel CLI, logged in to the team that owns the project
+- An AWS account with Textract access
 
 ## Setup
 
-### 1. Clone and Install
+### 1. Clone and install
 
 ```bash
 git clone <your-repo-url>
@@ -28,61 +28,50 @@ cd receipt-scanner-web
 pnpm install   # also installs the git hooks
 ```
 
-### 2. Environment Variables
+### 2. Environment variables
 
-Copy the example environment file and fill in your credentials:
+The Neon database comes from the Vercel Marketplace, which sets its variables on the Vercel project. Pull them, along with the Better Auth secret and the AWS keys, into `.env.local`:
 
 ```bash
-cp .env.example .env.local
+vercel link
+vercel env pull .env.local --yes
 ```
 
-Edit `.env.local` with your values:
+`.env.example` lists every variable. The database is in AWS us-west-2, so `vercel.json` runs the functions in `pdx1` and `AWS_REGION` is `us-west-2`.
+
+### 3. Database tables
+
+Create the tables. It's safe to re-run.
+
+```bash
+pnpm setup-db
+```
+
+### 4. The shared account
+
+Everyone signs in with one shared account; there is no sign-up page. Create it, or reset its password, with a password of at least 16 characters. Resetting signs out every device.
+
+```bash
+read -r ACCOUNT_EMAIL; read -rs ACCOUNT_PASSWORD; export ACCOUNT_EMAIL ACCOUNT_PASSWORD
+pnpm create-account && unset ACCOUNT_PASSWORD
+```
+
+### 5. A database branch for local development
+
+`pnpm dev` should use a `dev` branch of the database rather than the main one. After steps 3 and 4, create the branch from `main` in the Neon console (`vercel integration open neon receipt-scanner-db`), so it starts with the tables and the account. Then put its connection strings in `.env.development.local`, which overrides `.env.local` under `pnpm dev` and which `vercel env pull` never overwrites:
 
 ```env
-# AWS Textract Configuration
-AWS_ACCESS_KEY_ID=your_access_key_here
-AWS_SECRET_ACCESS_KEY=your_secret_key_here
-AWS_REGION=us-east-1
-
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+DATABASE_URL=<dev branch, pooled>
+DATABASE_URL_UNPOOLED=<dev branch, direct>
 ```
 
-### 3. Supabase Database Setup
+Preview deployments get their own copy of the main database automatically.
 
-Create a new Supabase project, then run the SQL files from `database/0.1.0/` in the Supabase SQL Editor in order:
+### 6. AWS Textract
 
-```bash
-database/0.1.0/01_buckets.sql
-database/0.1.0/02_receipts.sql
-```
-
-This will create:
-- `buckets` table - for organizing receipts by year, month, and category
-- `receipts` table - for storing receipt data with bucket associations
-- Appropriate indexes and Row Level Security policies
-
-### 4. Supabase Authentication Setup
-
-This app uses Supabase Auth for login. Since it's a personal app, you'll create a single user account manually:
-
-1. Go to your Supabase dashboard
-2. Navigate to **Authentication** → **Users**
-3. Click **Add user** → **Create new user**
-4. Enter your email and password
-5. Check **Auto Confirm User**
-6. Click **Create user**
-
-Only this user will be able to log in to the app.
-
-### 5. AWS Textract Setup
-
-1. Create an IAM user in AWS with `AmazonTextractFullAccess` permission
-2. Generate access keys for the IAM user
-3. Add the access key ID and secret to your `.env.local`
-
-Note: AWS Textract is available in select regions. The default region is `us-east-1`.
+1. Create an IAM user in AWS with the `AmazonTextractFullAccess` permission
+2. Create an access key for that user
+3. Add the access key ID and secret to the Vercel project's environment variables, then pull them again
 
 ## Running the App
 
@@ -102,13 +91,12 @@ pnpm test        # Vitest
 
 Lefthook runs Biome on staged files before each commit, and the tests and type check before each push.
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
 ## Tech Stack
 
 - **Framework**: Next.js 16 (App Router)
 - **UI**: React 19, Tailwind CSS 4
-- **Database**: Supabase (PostgreSQL)
+- **Database**: Neon Postgres, plain SQL over the serverless driver
+- **Sign-in**: Better Auth
 - **OCR**: AWS Textract (AnalyzeExpense API)
 - **Camera**: react-webcam
 - **Tooling**: pnpm, Biome, Lefthook, Vitest with Testing Library
@@ -117,30 +105,29 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ```
 ├── app/
+│   ├── actions.ts            # Server actions for buckets and receipts
 │   ├── api/
-│   │   ├── scan-receipt/    # Receipt scanning API endpoint
-│   │   └── save-receipt/    # Receipt saving API endpoint
-│   ├── login/               # Login page
-│   ├── page.tsx             # Main application page
-│   └── globals.css          # Global styles
+│   │   ├── auth/             # Better Auth endpoints
+│   │   └── scan-receipt/     # Reads a receipt photo with Textract
+│   ├── login/                # Sign-in page
+│   └── page.tsx              # Loads buckets and receipts for the main screen
 ├── components/
-│   ├── capture-flow/        # Camera capture flow components
-│   ├── CameraCapture.tsx    # Webcam capture component
-│   ├── ReceiptCard.tsx      # Receipt display card
-│   ├── ReceiptList.tsx      # Receipt list container
-│   └── ExportButton.tsx     # Excel export button
+│   ├── ReceiptsApp.tsx       # The main screen
+│   ├── capture-flow/         # Camera, review, saving and result screens
+│   ├── BucketPicker.tsx      # Chooses the bucket a receipt is filed in
+│   └── ...
 ├── lib/
-│   ├── supabase/
-│   │   ├── client.ts        # Browser Supabase client (auth)
-│   │   ├── server.ts        # Server Supabase client (auth)
-│   │   └── middleware.ts    # Session management
-│   ├── supabase.ts          # Supabase database queries
-│   └── textract.ts          # AWS Textract integration
-├── middleware.ts            # Next.js auth middleware
-├── tests/                   # Vitest tests for lib code
-└── types/
-    ├── receipt.ts           # Receipt type definitions
-    └── capture-flow.ts      # Capture flow state types
+│   ├── auth.ts               # Better Auth setup
+│   ├── db/                   # Neon connection and table definitions
+│   ├── receipt-store.ts      # Reads and writes buckets and receipts
+│   ├── receipt-reading.ts    # Turns a Textract result into receipt details
+│   ├── textract.ts           # AWS Textract call
+│   └── excel.ts              # Excel export
+├── proxy.ts                  # Sends signed-out visitors to the sign-in page
+├── scripts/                  # setup-db and create-account
+├── tests/                    # Vitest tests
+├── CONTEXT.md                # Glossary: bucket, receipt, account, ...
+└── docs/adr/                 # Decisions, such as why Neon and Better Auth
 ```
 
 ## License
