@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
 import {
-  useReactTable,
+  createColumnHelper,
+  flexRender,
   getCoreRowModel,
   getSortedRowModel,
-  flexRender,
-  createColumnHelper,
   SortingState,
-} from '@tanstack/react-table';
-import { Receipt } from '@/types/receipt';
-import { Bucket, formatBucketLabel } from '@/types/bucket';
+  useReactTable,
+} from "@tanstack/react-table";
+import { useMemo, useState } from "react";
+import { Bucket, formatBucketLabel } from "@/types/bucket";
+import { Receipt } from "@/types/receipt";
 
 interface ReceiptTableProps {
   receipts: Receipt[];
@@ -31,34 +31,32 @@ export default function ReceiptTable({
   deletingId,
   isLoading,
 }: ReceiptTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: 'receipt_date', desc: true },
-  ]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: "receipt_date", desc: true }]);
 
   const columns = useMemo(
     () => [
-      columnHelper.accessor('receipt_date', {
-        header: 'Date',
-        cell: (info) => info.getValue() || '-',
-        sortingFn: 'alphanumeric',
+      columnHelper.accessor("receipt_date", {
+        header: "Date",
+        cell: (info) => info.getValue() || "-",
+        sortingFn: "alphanumeric",
       }),
-      columnHelper.accessor('vendor', {
-        header: 'Vendor',
-        cell: (info) => info.getValue() || '-',
+      columnHelper.accessor("vendor", {
+        header: "Vendor",
+        cell: (info) => info.getValue() || "-",
       }),
-      columnHelper.accessor('invoice_number', {
-        header: 'Invoice #',
-        cell: (info) => info.getValue() || '-',
+      columnHelper.accessor("invoice_number", {
+        header: "Invoice #",
+        cell: (info) => info.getValue() || "-",
       }),
-      columnHelper.accessor('subtotal', {
+      columnHelper.accessor("subtotal", {
         header: () => <span className="w-full text-right block">Subtotal</span>,
-        cell: (info) => <span className="block text-right">{info.getValue() || '-'}</span>,
+        cell: (info) => <span className="block text-right">{info.getValue() || "-"}</span>,
       }),
-      columnHelper.accessor('gst', {
+      columnHelper.accessor("gst", {
         header: () => <span className="w-full text-right block">GST</span>,
-        cell: (info) => <span className="block text-right">{info.getValue() || '-'}</span>,
+        cell: (info) => <span className="block text-right">{info.getValue() || "-"}</span>,
       }),
-      columnHelper.accessor('total', {
+      columnHelper.accessor("total", {
         header: () => <span className="w-full text-right block">Total</span>,
         cell: (info) => {
           const value = info.getValue();
@@ -70,8 +68,8 @@ export default function ReceiptTable({
         },
       }),
       columnHelper.display({
-        id: 'actions',
-        header: '',
+        id: "actions",
+        header: "",
         cell: (info) => (
           <div className="flex items-center gap-2">
             <button
@@ -80,7 +78,12 @@ export default function ReceiptTable({
               title="Edit"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
               </svg>
             </button>
             <button
@@ -91,11 +94,21 @@ export default function ReceiptTable({
             >
               {deletingId === info.row.original.id ? (
                 <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
                 </svg>
               ) : (
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
                 </svg>
               )}
             </button>
@@ -103,7 +116,7 @@ export default function ReceiptTable({
         ),
       }),
     ],
-    [onDelete, onEdit, deletingId]
+    [onDelete, onEdit, deletingId],
   );
 
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -128,9 +141,7 @@ export default function ReceiptTable({
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">Select a bucket to view receipts.</p>
-        <p className="text-gray-400 text-sm mt-1">
-          Or create your first bucket to get started.
-        </p>
+        <p className="text-gray-400 text-sm mt-1">Or create your first bucket to get started.</p>
       </div>
     );
   }
@@ -139,9 +150,7 @@ export default function ReceiptTable({
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">No receipts in {formatBucketLabel(selectedBucket)}.</p>
-        <p className="text-gray-400 text-sm mt-1">
-          Start scanning to add receipts!
-        </p>
+        <p className="text-gray-400 text-sm mt-1">Start scanning to add receipts!</p>
       </div>
     );
   }
@@ -156,23 +165,18 @@ export default function ReceiptTable({
                 <th
                   key={header.id}
                   className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
-                    header.column.getCanSort() ? 'cursor-pointer select-none' : ''
+                    header.column.getCanSort() ? "cursor-pointer select-none" : ""
                   }`}
                   onClick={header.column.getToggleSortingHandler()}
                 >
                   <div className="flex items-center gap-1">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                     {header.column.getCanSort() && (
                       <span className="text-gray-400">
                         {{
-                          asc: ' ↑',
-                          desc: ' ↓',
-                        }[header.column.getIsSorted() as string] ?? ''}
+                          asc: " ↑",
+                          desc: " ↓",
+                        }[header.column.getIsSorted() as string] ?? ""}
                       </span>
                     )}
                   </div>
@@ -185,10 +189,7 @@ export default function ReceiptTable({
           {table.getRowModel().rows.map((row) => (
             <tr key={row.id} className="hover:bg-gray-50">
               {row.getVisibleCells().map((cell) => (
-                <td
-                  key={cell.id}
-                  className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap"
-                >
+                <td key={cell.id} className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useCallback, useRef, useState } from 'react';
-import Webcam from 'react-webcam';
-import { Bucket, formatBucketLabel } from '@/types/bucket';
+import { useCallback, useRef, useState } from "react";
+import Webcam from "react-webcam";
+import { Bucket, formatBucketLabel } from "@/types/bucket";
 
 interface CameraCaptureProps {
   onCapture: (imageData: string) => void;
@@ -24,7 +24,7 @@ function cropToOverlay(imageDataUrl: string): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       const cropX = img.width * OVERLAY_MARGIN;
       const cropY = img.height * OVERLAY_MARGIN;
       const cropWidth = img.width * (1 - 2 * OVERLAY_MARGIN);
@@ -32,10 +32,10 @@ function cropToOverlay(imageDataUrl: string): Promise<string> {
 
       canvas.width = cropWidth;
       canvas.height = cropHeight;
-      const ctx = canvas.getContext('2d')!;
+      const ctx = canvas.getContext("2d")!;
       ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
 
-      resolve(canvas.toDataURL('image/jpeg', 0.92));
+      resolve(canvas.toDataURL("image/jpeg", 0.92));
     };
     img.onerror = () => {
       // On error, return original image
@@ -60,7 +60,7 @@ export default function CameraCapture({
   const [showFlash, setShowFlash] = useState(false);
 
   const videoConstraints = {
-    facingMode: 'environment',
+    facingMode: "environment",
     width: { ideal: 1920 },
     height: { ideal: 1080 },
   };
@@ -74,7 +74,7 @@ export default function CameraCapture({
       const imageSrc = webcamRef.current.getScreenshot();
       if (imageSrc) {
         // Crop to overlay area before passing to parent
-        cropToOverlay(imageSrc).then(croppedImage => {
+        cropToOverlay(imageSrc).then((croppedImage) => {
           onCapture(croppedImage);
         });
       }
@@ -92,11 +92,11 @@ export default function CameraCapture({
       reader.readAsDataURL(file);
     }
     // Reset input so the same file can be selected again
-    event.target.value = '';
+    event.target.value = "";
   };
 
   const handleCameraError = () => {
-    setCameraError('Unable to access camera. Please use the file upload option.');
+    setCameraError("Unable to access camera. Please use the file upload option.");
     onCloseCamera();
   };
 
@@ -123,7 +123,7 @@ export default function CameraCapture({
           <div
             className="absolute inset-0 bg-black/50"
             style={{
-              clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, 10% 10%, 10% 90%, 90% 90%, 90% 10%, 10% 10%)',
+              clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, 10% 10%, 10% 90%, 90% 90%, 90% 10%, 10% 10%)",
             }}
           />
 
@@ -146,9 +146,7 @@ export default function CameraCapture({
         </div>
 
         {/* Flash overlay */}
-        {showFlash && (
-          <div className="absolute inset-0 bg-white animate-flash pointer-events-none" />
-        )}
+        {showFlash && <div className="absolute inset-0 bg-white animate-flash pointer-events-none" />}
 
         <div className="absolute bottom-0 left-0 right-0 pb-8 pt-4 bg-gradient-to-t from-black/70 to-transparent">
           <div className="flex justify-center gap-6">
@@ -175,9 +173,7 @@ export default function CameraCapture({
     <div className="w-full md:max-w-md mx-auto">
       <div className="md:bg-gray-100 md:rounded-lg overflow-hidden">
         <div className="md:p-8 md:text-center">
-          {cameraError && (
-            <p className="text-red-600 mb-4 text-sm text-center">{cameraError}</p>
-          )}
+          {cameraError && <p className="text-red-600 mb-4 text-sm text-center">{cameraError}</p>}
           {/* Bucket indicator - hidden on mobile */}
           {selectedBucket && (
             <p className="hidden md:block text-gray-600 mb-4 text-sm">
@@ -190,11 +186,20 @@ export default function CameraCapture({
               disabled={isLoading || disabled}
               className="flex-1 md:flex-none md:w-full bg-blue-600 text-white px-4 md:px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:hidden" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 md:hidden"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z"
+                  clipRule="evenodd"
+                />
               </svg>
-              <span className="md:hidden">{disabled ? 'Select Bucket' : 'Camera'}</span>
-              <span className="hidden md:inline">{disabled ? 'Select a Bucket First' : 'Open Camera'}</span>
+              <span className="md:hidden">{disabled ? "Select Bucket" : "Camera"}</span>
+              <span className="hidden md:inline">{disabled ? "Select a Bucket First" : "Open Camera"}</span>
             </button>
             {/* Divider - hidden on mobile */}
             <div className="hidden md:block relative">
@@ -210,8 +215,17 @@ export default function CameraCapture({
               disabled={isLoading || disabled}
               className="flex-1 md:flex-none md:w-full bg-gray-200 text-gray-800 px-4 md:px-6 py-3 rounded-lg font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:hidden" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 md:hidden"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               <span className="md:hidden">Upload</span>
               <span className="hidden md:inline">Upload Photo</span>

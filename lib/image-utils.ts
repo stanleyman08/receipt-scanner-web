@@ -1,4 +1,4 @@
-import { deskewReceipt } from './image-preprocessing';
+import { deskewReceipt } from "./image-preprocessing";
 
 /**
  * Enhances contrast for faded receipts (especially thermal paper).
@@ -39,7 +39,7 @@ function enhanceContrast(ctx: CanvasRenderingContext2D, width: number, height: n
 /**
  * Callback for tracking preprocessing progress
  */
-export type PreprocessingProgressCallback = (stage: 'deskewing' | 'optimizing') => void;
+export type PreprocessingProgressCallback = (stage: "deskewing" | "optimizing") => void;
 
 /**
  * Compresses and resizes an image for faster upload and OCR processing.
@@ -57,14 +57,14 @@ export type PreprocessingProgressCallback = (stage: 'deskewing' | 'optimizing') 
  */
 export async function optimizeImageForOCR(
   imageDataUrl: string,
-  onProgress?: PreprocessingProgressCallback
+  onProgress?: PreprocessingProgressCallback,
 ): Promise<string> {
   // Step 1: Auto-detect and deskew receipt
-  onProgress?.('deskewing');
+  onProgress?.("deskewing");
   const deskewed = await deskewReceipt(imageDataUrl);
 
   // Step 2: Resize, enhance contrast, and compress
-  onProgress?.('optimizing');
+  onProgress?.("optimizing");
   return new Promise((resolve, reject) => {
     const img = new Image();
 
@@ -83,32 +83,32 @@ export async function optimizeImageForOCR(
       }
 
       // Create canvas and draw resized image
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
 
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       if (!ctx) {
-        reject(new Error('Failed to get canvas context'));
+        reject(new Error("Failed to get canvas context"));
         return;
       }
 
       // Use better image smoothing for resize
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
+      ctx.imageSmoothingQuality = "high";
       ctx.drawImage(img, 0, 0, width, height);
 
       // Step 3: Enhance contrast for faded receipts
       enhanceContrast(ctx, width, height);
 
       // Step 4: Compress to JPEG with 85% quality (good balance for OCR)
-      const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      const optimizedDataUrl = canvas.toDataURL("image/jpeg", 0.85);
 
       resolve(optimizedDataUrl);
     };
 
     img.onerror = () => {
-      reject(new Error('Failed to load image for optimization'));
+      reject(new Error("Failed to load image for optimization"));
     };
 
     img.src = deskewed;
@@ -120,7 +120,7 @@ export async function optimizeImageForOCR(
  */
 export function getBase64Size(dataUrl: string): number {
   // Remove data URL prefix to get just the base64 part
-  const base64 = dataUrl.split(',')[1] || dataUrl;
+  const base64 = dataUrl.split(",")[1] || dataUrl;
   // Base64 encodes 3 bytes as 4 characters
   return Math.round((base64.length * 3) / 4);
 }

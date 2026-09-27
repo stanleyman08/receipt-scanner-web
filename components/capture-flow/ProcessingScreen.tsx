@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { ProcessingStage } from '@/types/capture-flow';
+import { ProcessingStage } from "@/types/capture-flow";
 
 interface ProcessingScreenProps {
   imageData: string;
@@ -9,19 +9,19 @@ interface ProcessingScreenProps {
 }
 
 const stages: { key: ProcessingStage; label: string }[] = [
-  { key: 'deskewing', label: 'Straightening receipt' },
-  { key: 'optimizing', label: 'Enhancing image' },
-  { key: 'analyzing', label: 'Analyzing receipt' },
-  { key: 'extracting', label: 'Extracting data' },
+  { key: "deskewing", label: "Straightening receipt" },
+  { key: "optimizing", label: "Enhancing image" },
+  { key: "analyzing", label: "Analyzing receipt" },
+  { key: "extracting", label: "Extracting data" },
 ];
 
-function getStageStatus(currentStage: ProcessingStage, stageKey: ProcessingStage): 'complete' | 'current' | 'pending' {
-  const currentIndex = stages.findIndex(s => s.key === currentStage);
-  const stageIndex = stages.findIndex(s => s.key === stageKey);
+function getStageStatus(currentStage: ProcessingStage, stageKey: ProcessingStage): "complete" | "current" | "pending" {
+  const currentIndex = stages.findIndex((s) => s.key === currentStage);
+  const stageIndex = stages.findIndex((s) => s.key === stageKey);
 
-  if (stageIndex < currentIndex) return 'complete';
-  if (stageIndex === currentIndex) return 'current';
-  return 'pending';
+  if (stageIndex < currentIndex) return "complete";
+  if (stageIndex === currentIndex) return "current";
+  return "pending";
 }
 
 export default function ProcessingScreen({ imageData, stage, onCancel }: ProcessingScreenProps) {
@@ -30,11 +30,7 @@ export default function ProcessingScreen({ imageData, stage, onCancel }: Process
       {/* Dimmed image background */}
       <div className="absolute inset-0 flex items-center justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imageData}
-          alt="Processing receipt"
-          className="max-h-full max-w-full object-contain opacity-40"
-        />
+        <img src={imageData} alt="Processing receipt" className="max-h-full max-w-full object-contain opacity-40" />
       </div>
 
       {/* Progress card overlay */}
@@ -49,20 +45,16 @@ export default function ProcessingScreen({ imageData, stage, onCancel }: Process
             const status = getStageStatus(stage, key);
             return (
               <li key={key} className="flex items-center gap-3">
-                {status === 'complete' && (
+                {status === "complete" && (
                   <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white text-xs">
                     ✓
                   </span>
                 )}
-                {status === 'current' && (
+                {status === "current" && (
                   <span className="w-5 h-5 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
                 )}
-                {status === 'pending' && (
-                  <span className="w-5 h-5 rounded-full border-2 border-gray-300" />
-                )}
-                <span className={`text-sm ${status === 'pending' ? 'text-gray-400' : 'text-gray-700'}`}>
-                  {label}
-                </span>
+                {status === "pending" && <span className="w-5 h-5 rounded-full border-2 border-gray-300" />}
+                <span className={`text-sm ${status === "pending" ? "text-gray-400" : "text-gray-700"}`}>{label}</span>
               </li>
             );
           })}

@@ -1,10 +1,10 @@
-import ExcelJS from 'exceljs';
-import { Receipt } from '@/types/receipt';
-import { Bucket, MONTH_NAMES } from '@/types/bucket';
+import ExcelJS from "exceljs";
+import { Bucket, MONTH_NAMES } from "@/types/bucket";
+import { Receipt } from "@/types/receipt";
 
-const BUSINESS_NAME = 'Carino';
+const BUSINESS_NAME = "Carino";
 
-const thinBorder: ExcelJS.Border = { style: 'thin', color: { argb: 'FF000000' } };
+const thinBorder: ExcelJS.Border = { style: "thin", color: { argb: "FF000000" } };
 const cellBorder: Partial<ExcelJS.Borders> = {
   top: thinBorder,
   left: thinBorder,
@@ -14,7 +14,7 @@ const cellBorder: Partial<ExcelJS.Borders> = {
 
 function parseMonetary(value: string | null): number | null {
   if (!value) return null;
-  const cleaned = value.replace(/[$,\s]/g, '').replace(/^-$/, '0');
+  const cleaned = value.replace(/[$,\s]/g, "").replace(/^-$/, "0");
   const num = parseFloat(cleaned);
   return isNaN(num) ? null : num;
 }
@@ -22,11 +22,11 @@ function parseMonetary(value: string | null): number | null {
 function buildSheet(ws: ExcelJS.Worksheet, receipts: Receipt[], bucket: Bucket): void {
   const monthName = MONTH_NAMES[bucket.month - 1];
   const title = `${BUSINESS_NAME} ${monthName} ${bucket.year} - ${bucket.category}`;
-  const headers = ['Date', 'Vendor', 'Invoice #', 'Subtotal', 'GST', 'Total'];
+  const headers = ["Date", "Vendor", "Invoice #", "Subtotal", "GST", "Total"];
 
   // Row 1: Title (merged across all columns, bold)
-  ws.mergeCells('A1:F1');
-  const titleCell = ws.getCell('A1');
+  ws.mergeCells("A1:F1");
+  const titleCell = ws.getCell("A1");
   titleCell.value = title;
   titleCell.font = { bold: true, size: 18 };
 
@@ -44,9 +44,9 @@ function buildSheet(ws: ExcelJS.Worksheet, receipts: Receipt[], bucket: Bucket):
   const dataStartRow = 4;
   receipts.forEach((receipt, idx) => {
     const row = ws.getRow(dataStartRow + idx);
-    row.getCell(1).value = receipt.receipt_date ?? '';
-    row.getCell(2).value = receipt.vendor ?? '';
-    row.getCell(3).value = receipt.invoice_number ?? '';
+    row.getCell(1).value = receipt.receipt_date ?? "";
+    row.getCell(2).value = receipt.vendor ?? "";
+    row.getCell(3).value = receipt.invoice_number ?? "";
 
     const subtotal = parseMonetary(receipt.subtotal);
     const gst = parseMonetary(receipt.gst);
@@ -67,7 +67,7 @@ function buildSheet(ws: ExcelJS.Worksheet, receipts: Receipt[], bucket: Bucket):
   // Format monetary columns as currency
   for (let r = dataStartRow; r <= dataEndRow; r++) {
     for (const col of [4, 5, 6]) {
-      ws.getRow(r).getCell(col).numFmt = '$#,##0.00';
+      ws.getRow(r).getCell(col).numFmt = "$#,##0.00";
     }
   }
 
@@ -83,26 +83,26 @@ function buildSheet(ws: ExcelJS.Worksheet, receipts: Receipt[], bucket: Bucket):
   } else {
     totalsRowObj.getCell(6).value = 0;
   }
-  totalsRowObj.getCell(6).numFmt = '$#,##0.00';
+  totalsRowObj.getCell(6).numFmt = "$#,##0.00";
   totalsRowObj.getCell(6).font = { bold: true };
 
   // Set column widths
   ws.columns = [
-    { width: 14 },  // Date
-    { width: 32 },  // Vendor
-    { width: 17 },  // Invoice #
-    { width: 14 },  // Subtotal
-    { width: 12 },  // GST
-    { width: 14 },  // Total
+    { width: 14 }, // Date
+    { width: 32 }, // Vendor
+    { width: 17 }, // Invoice #
+    { width: 14 }, // Subtotal
+    { width: 12 }, // GST
+    { width: 14 }, // Total
   ];
 }
 
 function triggerDownload(buffer: ArrayBuffer, filename: string): void {
   const blob = new Blob([buffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
@@ -127,7 +127,7 @@ export async function downloadBucketExcel(receipts: Receipt[], bucket: Bucket): 
 export async function downloadYearExcel(
   receipts: Receipt[],
   bucketMap: Map<string, Bucket>,
-  year: number
+  year: number,
 ): Promise<void> {
   // Group receipts by bucket
   const receiptsByBucket = new Map<string, Receipt[]>();
@@ -163,8 +163,8 @@ export async function downloadYearExcel(
 
   // If no sheets were added, create an empty one
   if (bucketsWithReceipts.length === 0) {
-    const ws = wb.addWorksheet('Empty');
-    ws.getCell('A1').value = 'No receipts found';
+    const ws = wb.addWorksheet("Empty");
+    ws.getCell("A1").value = "No receipts found";
   }
 
   const filename = `${BUSINESS_NAME} ${year}.xlsx`;

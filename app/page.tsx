@@ -1,33 +1,33 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import CameraCapture from '@/components/CameraCapture';
-import ReceiptTable from '@/components/ReceiptTable';
-import BucketSidebar from '@/components/BucketSidebar';
-import AddBucketModal from '@/components/AddBucketModal';
-import EditReceiptModal from '@/components/EditReceiptModal';
-import ExportButton from '@/components/ExportButton';
-import { EditScreen, ProcessingScreen, ResultsScreen, ErrorScreen } from '@/components/capture-flow';
-import { Receipt, ParseReceiptResponse, SaveReceiptResponse, ReceiptInsert, EditedReceiptData } from '@/types/receipt';
-import { Bucket, BucketCategory, formatBucketLabel } from '@/types/bucket';
-import { CaptureFlowState, ProcessingStage } from '@/types/capture-flow';
-import { getReceipts, deleteReceipt, updateReceipt, getBuckets, createBucket } from '@/lib/supabase';
-import { createClient } from '@/lib/supabase/client';
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import AddBucketModal from "@/components/AddBucketModal";
+import BucketSidebar from "@/components/BucketSidebar";
+import CameraCapture from "@/components/CameraCapture";
+import { EditScreen, ErrorScreen, ProcessingScreen, ResultsScreen } from "@/components/capture-flow";
+import EditReceiptModal from "@/components/EditReceiptModal";
+import ExportButton from "@/components/ExportButton";
+import ReceiptTable from "@/components/ReceiptTable";
 import {
+  filterBucketsByYearMonth,
   filterByBucket,
-  getReceiptCountsByBucket,
-  sortBuckets,
+  filterReceiptsByYear,
   getDefaultBucket,
-  getUniqueYears,
-  groupBucketsByYear,
+  getReceiptCountsByBucket,
   getReceiptCountsByYear,
   getUniqueMonthsForYear,
-  filterBucketsByYearMonth,
-  filterReceiptsByYear,
-} from '@/lib/bucket';
-import { downloadYearExcel } from '@/lib/excel';
-import { optimizeImageForOCR } from '@/lib/image-utils';
+  getUniqueYears,
+  groupBucketsByYear,
+  sortBuckets,
+} from "@/lib/bucket";
+import { downloadYearExcel } from "@/lib/excel";
+import { optimizeImageForOCR } from "@/lib/image-utils";
+import { createBucket, deleteReceipt, getBuckets, getReceipts, updateReceipt } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
+import { Bucket, BucketCategory, formatBucketLabel } from "@/types/bucket";
+import { CaptureFlowState, ProcessingStage } from "@/types/capture-flow";
+import { EditedReceiptData, ParseReceiptResponse, Receipt, ReceiptInsert, SaveReceiptResponse } from "@/types/receipt";
 
 export default function Home() {
   const router = useRouter();
@@ -50,7 +50,7 @@ export default function Home() {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Capture flow state
-  const [captureState, setCaptureState] = useState<CaptureFlowState>({ status: 'idle' });
+  const [captureState, setCaptureState] = useState<CaptureFlowState>({ status: "idle" });
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Derived state
@@ -60,21 +60,18 @@ export default function Home() {
   const bucketsByYear = groupBucketsByYear(buckets);
   const yearReceiptCounts = getReceiptCountsByYear(receipts, buckets);
   const uniqueMonths = useMemo(
-    () => selectedYear !== null ? getUniqueMonthsForYear(buckets, selectedYear) : [],
-    [buckets, selectedYear]
+    () => (selectedYear !== null ? getUniqueMonthsForYear(buckets, selectedYear) : []),
+    [buckets, selectedYear],
   );
   const bucketsForYearMonth = useMemo(
-    () => selectedYear !== null && selectedMonth !== null
-      ? filterBucketsByYearMonth(buckets, selectedYear, selectedMonth)
-      : [],
-    [buckets, selectedYear, selectedMonth]
+    () =>
+      selectedYear !== null && selectedMonth !== null
+        ? filterBucketsByYearMonth(buckets, selectedYear, selectedMonth)
+        : [],
+    [buckets, selectedYear, selectedMonth],
   );
-  const yearReceiptTotal = selectedYear !== null
-    ? (yearReceiptCounts.get(selectedYear) || 0)
-    : 0;
-  const filteredReceipts = selectedBucket
-    ? filterByBucket(receipts, selectedBucket.id)
-    : [];
+  const yearReceiptTotal = selectedYear !== null ? yearReceiptCounts.get(selectedYear) || 0 : 0;
+  const filteredReceipts = selectedBucket ? filterByBucket(receipts, selectedBucket.id) : [];
 
   const fetchData = useCallback(() => {
     setIsLoading(true);
@@ -92,7 +89,7 @@ export default function Home() {
         }
       }
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -158,7 +155,7 @@ export default function Home() {
       setSelectedMonth(newBucket.month);
       setIsAddBucketModalOpen(false);
     } else {
-      setError('Failed to create bucket. It may already exist.');
+      setError("Failed to create bucket. It may already exist.");
     }
   };
 
@@ -167,12 +164,12 @@ export default function Home() {
     abortControllerRef.current = new AbortController();
 
     const updateStage = (stage: ProcessingStage) => {
-      setCaptureState({ status: 'processing', imageData, stage });
+      setCaptureState({ status: "processing", imageData, stage });
     };
 
     try {
       // Stage 1 & 2: Deskew and optimize image (with progress callback)
-      updateStage('deskewing');
+      updateStage("deskewing");
       const optimizedImage = await optimizeImageForOCR(imageData, (preprocessStage) => {
         updateStage(preprocessStage);
       });
@@ -180,12 +177,12 @@ export default function Home() {
       if (abortControllerRef.current?.signal.aborted) return;
 
       // Stage 2: Analyzing with Textract
-      updateStage('analyzing');
+      updateStage("analyzing");
 
-      const response = await fetch('/api/scan-receipt', {
-        method: 'POST',
+      const response = await fetch("/api/scan-receipt", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ image: optimizedImage }),
         signal: abortControllerRef.current?.signal,
@@ -194,7 +191,7 @@ export default function Home() {
       if (abortControllerRef.current?.signal.aborted) return;
 
       // Stage 3: Extracting
-      updateStage('extracting');
+      updateStage("extracting");
       const result: ParseReceiptResponse = await response.json();
 
       if (abortControllerRef.current?.signal.aborted) return;
@@ -202,25 +199,25 @@ export default function Home() {
       if (result.success && result.data) {
         // Transition to editing state with parsed data
         setCaptureState({
-          status: 'editing',
+          status: "editing",
           imageData,
           parsedData: result.data,
         });
       } else {
         setCaptureState({
-          status: 'error',
+          status: "error",
           imageData,
-          error: result.error || 'Failed to extract receipt data',
+          error: result.error || "Failed to extract receipt data",
         });
       }
     } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
+      if (err instanceof Error && err.name === "AbortError") {
         return;
       }
       setCaptureState({
-        status: 'error',
+        status: "error",
         imageData,
-        error: 'Failed to scan receipt. Please try again.',
+        error: "Failed to scan receipt. Please try again.",
       });
     }
   };
@@ -247,16 +244,16 @@ export default function Home() {
 
     // Show success state immediately for better UX
     setCaptureState({
-      status: 'success',
+      status: "success",
       imageData,
       receipt: optimisticReceipt,
     });
 
     try {
-      const response = await fetch('/api/save-receipt', {
-        method: 'POST',
+      const response = await fetch("/api/save-receipt", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(receiptData),
       });
@@ -265,32 +262,30 @@ export default function Home() {
 
       if (result.success && result.receipt) {
         // Replace optimistic receipt with real one from server
-        setReceipts((prev) =>
-          prev.map((r) => (r.id === tempId ? result.receipt! : r))
-        );
+        setReceipts((prev) => prev.map((r) => (r.id === tempId ? result.receipt! : r)));
       } else {
         // Rollback: remove optimistic receipt on failure
         setReceipts((prev) => prev.filter((r) => r.id !== tempId));
-        setError(result.error || 'Failed to save receipt. Please try again.');
+        setError(result.error || "Failed to save receipt. Please try again.");
       }
     } catch {
       // Rollback: remove optimistic receipt on error
       setReceipts((prev) => prev.filter((r) => r.id !== tempId));
-      setError('Failed to save receipt. Please try again.');
+      setError("Failed to save receipt. Please try again.");
     }
   };
 
   // Camera handlers
   const handleOpenCamera = () => {
     if (selectedBucket === null) {
-      setError('Please select or create a bucket first');
+      setError("Please select or create a bucket first");
       return;
     }
-    setCaptureState({ status: 'camera_active' });
+    setCaptureState({ status: "camera_active" });
   };
 
   const handleCloseCamera = () => {
-    setCaptureState({ status: 'idle' });
+    setCaptureState({ status: "idle" });
   };
 
   const handleCapture = (imageData: string) => {
@@ -301,12 +296,12 @@ export default function Home() {
   // Processing handlers
   const handleCancelProcessing = () => {
     abortControllerRef.current?.abort();
-    setCaptureState({ status: 'idle' });
+    setCaptureState({ status: "idle" });
   };
 
   // Edit handlers
   const handleConfirmEdit = (editedData: EditedReceiptData) => {
-    if (captureState.status === 'editing' && selectedBucket !== null) {
+    if (captureState.status === "editing" && selectedBucket !== null) {
       // Add bucket_id to the receipt data
       const receiptWithBucket: ReceiptInsert = {
         ...editedData,
@@ -317,27 +312,27 @@ export default function Home() {
   };
 
   const handleRetake = () => {
-    setCaptureState({ status: 'camera_active' });
+    setCaptureState({ status: "camera_active" });
   };
 
   // Success handlers (receipt already added optimistically in saveEditedReceipt)
   const handleSaveReceipt = () => {
-    setSuccess('Receipt saved successfully!');
+    setSuccess("Receipt saved successfully!");
     setTimeout(() => setSuccess(null), 3000);
-    setCaptureState({ status: 'idle' });
+    setCaptureState({ status: "idle" });
   };
 
   const handleScanAnother = () => {
-    setCaptureState({ status: 'camera_active' });
+    setCaptureState({ status: "camera_active" });
   };
 
   // Error handlers
   const handleRetakeFromError = () => {
-    setCaptureState({ status: 'camera_active' });
+    setCaptureState({ status: "camera_active" });
   };
 
   const handleRetryFromError = () => {
-    if (captureState.status === 'error') {
+    if (captureState.status === "error") {
       processReceipt(captureState.imageData);
     }
   };
@@ -350,7 +345,7 @@ export default function Home() {
     if (success) {
       setReceipts((prev) => prev.filter((r) => r.id !== id));
     } else {
-      setError('Failed to delete receipt');
+      setError("Failed to delete receipt");
     }
 
     setDeletingId(null);
@@ -366,27 +361,25 @@ export default function Home() {
 
     const updated = await updateReceipt(id, updates);
     if (updated) {
-      setReceipts((prev) =>
-        prev.map((r) => (r.id === id ? updated : r))
-      );
+      setReceipts((prev) => prev.map((r) => (r.id === id ? updated : r)));
       setEditingReceipt(null);
-      setSuccess('Receipt updated successfully!');
+      setSuccess("Receipt updated successfully!");
       setTimeout(() => setSuccess(null), 3000);
     } else {
-      setError('Failed to update receipt');
+      setError("Failed to update receipt");
     }
 
     setIsSavingEdit(false);
   };
 
-  const isProcessing = captureState.status === 'processing';
-  const isCameraOpen = captureState.status === 'camera_active';
-  const hasFullscreenOverlay = captureState.status !== 'idle';
+  const isProcessing = captureState.status === "processing";
+  const isCameraOpen = captureState.status === "camera_active";
+  const hasFullscreenOverlay = captureState.status !== "idle";
   const canScan = selectedBucket !== null;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push("/login");
     router.refresh();
   };
 
@@ -414,27 +407,20 @@ export default function Home() {
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
                 {error}
-                <button
-                  onClick={() => setError(null)}
-                  className="ml-2 text-red-500 hover:text-red-700"
-                >
+                <button onClick={() => setError(null)} className="ml-2 text-red-500 hover:text-red-700">
                   ×
                 </button>
               </div>
             )}
 
             {success && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
-                {success}
-              </div>
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">{success}</div>
             )}
 
             {/* No buckets prompt */}
             {!isLoading && sortedBuckets.length === 0 && (
               <div className="mb-6 p-6 bg-blue-50 border border-blue-200 rounded-lg text-center">
-                <p className="text-blue-800 font-medium mb-2">
-                  Create your first bucket to get started
-                </p>
+                <p className="text-blue-800 font-medium mb-2">Create your first bucket to get started</p>
                 <p className="text-blue-600 text-sm mb-4">
                   Buckets help you organize receipts by Year, Month, and Category.
                 </p>
@@ -499,11 +485,7 @@ export default function Home() {
                       {formatBucketLabel(selectedBucket)} ({filteredReceipts.length})
                     </h2>
                     <div className="flex items-center gap-3">
-                      <ExportButton
-                        receipts={filteredReceipts}
-                        disabled={isLoading}
-                        bucket={selectedBucket}
-                      />
+                      <ExportButton receipts={filteredReceipts} disabled={isLoading} bucket={selectedBucket} />
                     </div>
                   </div>
                 )}
@@ -566,7 +548,7 @@ export default function Home() {
       />
 
       {/* Capture flow screens */}
-      {captureState.status === 'camera_active' && (
+      {captureState.status === "camera_active" && (
         <CameraCapture
           onCapture={handleCapture}
           onOpenCamera={handleOpenCamera}
@@ -576,7 +558,7 @@ export default function Home() {
         />
       )}
 
-      {captureState.status === 'processing' && (
+      {captureState.status === "processing" && (
         <ProcessingScreen
           imageData={captureState.imageData}
           stage={captureState.stage}
@@ -584,7 +566,7 @@ export default function Home() {
         />
       )}
 
-      {captureState.status === 'editing' && (
+      {captureState.status === "editing" && (
         <EditScreen
           imageData={captureState.imageData}
           parsedData={captureState.parsedData}
@@ -593,7 +575,7 @@ export default function Home() {
         />
       )}
 
-      {captureState.status === 'saving' && (
+      {captureState.status === "saving" && (
         <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4">
           <div className="flex flex-col items-center">
             <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
@@ -602,7 +584,7 @@ export default function Home() {
         </div>
       )}
 
-      {captureState.status === 'success' && (
+      {captureState.status === "success" && (
         <ResultsScreen
           imageData={captureState.imageData}
           receipt={captureState.receipt}
@@ -611,7 +593,7 @@ export default function Home() {
         />
       )}
 
-      {captureState.status === 'error' && (
+      {captureState.status === "error" && (
         <ErrorScreen
           imageData={captureState.imageData}
           error={captureState.error}

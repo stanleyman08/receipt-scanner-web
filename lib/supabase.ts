@@ -1,6 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
-import { Receipt, ReceiptInsert } from '@/types/receipt';
-import { Bucket, BucketInsert } from '@/types/bucket';
+import { createClient } from "@supabase/supabase-js";
+import { Bucket, BucketInsert } from "@/types/bucket";
+import { Receipt, ReceiptInsert } from "@/types/receipt";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -9,16 +9,18 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export async function saveReceipt(receipt: ReceiptInsert): Promise<Receipt | null> {
   const { data, error } = await supabase
-    .from('receipts')
-    .insert([{
-      ...receipt,
-      bucket_id: receipt.bucket_id,
-    }])
+    .from("receipts")
+    .insert([
+      {
+        ...receipt,
+        bucket_id: receipt.bucket_id,
+      },
+    ])
     .select()
     .single();
 
   if (error) {
-    console.error('Error saving receipt:', error);
+    console.error("Error saving receipt:", error);
     return null;
   }
 
@@ -26,13 +28,10 @@ export async function saveReceipt(receipt: ReceiptInsert): Promise<Receipt | nul
 }
 
 export async function getReceipts(): Promise<Receipt[]> {
-  const { data, error } = await supabase
-    .from('receipts')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const { data, error } = await supabase.from("receipts").select("*").order("created_at", { ascending: false });
 
   if (error) {
-    console.error('Error fetching receipts:', error);
+    console.error("Error fetching receipts:", error);
     return [];
   }
 
@@ -40,13 +39,10 @@ export async function getReceipts(): Promise<Receipt[]> {
 }
 
 export async function deleteReceipt(id: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('receipts')
-    .delete()
-    .eq('id', id);
+  const { error } = await supabase.from("receipts").delete().eq("id", id);
 
   if (error) {
-    console.error('Error deleting receipt:', error);
+    console.error("Error deleting receipt:", error);
     return false;
   }
 
@@ -54,15 +50,10 @@ export async function deleteReceipt(id: string): Promise<boolean> {
 }
 
 export async function updateReceipt(id: string, updates: Partial<ReceiptInsert>): Promise<Receipt | null> {
-  const { data, error } = await supabase
-    .from('receipts')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
+  const { data, error } = await supabase.from("receipts").update(updates).eq("id", id).select().single();
 
   if (error) {
-    console.error('Error updating receipt:', error);
+    console.error("Error updating receipt:", error);
     return null;
   }
 
@@ -72,14 +63,14 @@ export async function updateReceipt(id: string, updates: Partial<ReceiptInsert>)
 // Bucket functions
 export async function getBuckets(): Promise<Bucket[]> {
   const { data, error } = await supabase
-    .from('buckets')
-    .select('*')
-    .order('year', { ascending: false })
-    .order('month', { ascending: false })
-    .order('category', { ascending: true });
+    .from("buckets")
+    .select("*")
+    .order("year", { ascending: false })
+    .order("month", { ascending: false })
+    .order("category", { ascending: true });
 
   if (error) {
-    console.error('Error fetching buckets:', error);
+    console.error("Error fetching buckets:", error);
     return [];
   }
 
@@ -87,19 +78,15 @@ export async function getBuckets(): Promise<Bucket[]> {
 }
 
 export async function createBucket(bucket: BucketInsert): Promise<Bucket | null> {
-  const { data, error } = await supabase
-    .from('buckets')
-    .insert([bucket])
-    .select()
-    .single();
+  const { data, error } = await supabase.from("buckets").insert([bucket]).select().single();
 
   if (error) {
     // Check for duplicate key error
-    if (error.code === '23505') {
-      console.error('Bucket already exists');
+    if (error.code === "23505") {
+      console.error("Bucket already exists");
       return null;
     }
-    console.error('Error creating bucket:', error);
+    console.error("Error creating bucket:", error);
     return null;
   }
 
@@ -107,13 +94,10 @@ export async function createBucket(bucket: BucketInsert): Promise<Bucket | null>
 }
 
 export async function deleteBucket(id: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('buckets')
-    .delete()
-    .eq('id', id);
+  const { error } = await supabase.from("buckets").delete().eq("id", id);
 
   if (error) {
-    console.error('Error deleting bucket:', error);
+    console.error("Error deleting bucket:", error);
     return false;
   }
 

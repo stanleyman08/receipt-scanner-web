@@ -1,5 +1,5 @@
-import { Receipt } from '@/types/receipt';
-import { Bucket, compareBuckets } from '@/types/bucket';
+import { Bucket, compareBuckets } from "@/types/bucket";
+import { Receipt } from "@/types/receipt";
 
 // Filter receipts by bucket_id
 export function filterByBucket(receipts: Receipt[], bucketId: string): Receipt[] {
@@ -31,15 +31,8 @@ export function getDefaultBucket(buckets: Bucket[]): Bucket | null {
 }
 
 // Check if a bucket already exists
-export function bucketExists(
-  buckets: Bucket[],
-  year: number,
-  month: number,
-  category: string
-): boolean {
-  return buckets.some(
-    (b) => b.year === year && b.month === month && b.category === category
-  );
+export function bucketExists(buckets: Bucket[], year: number, month: number, category: string): boolean {
+  return buckets.some((b) => b.year === year && b.month === month && b.category === category);
 }
 
 // Extract distinct years from buckets, sorted descending
@@ -66,10 +59,7 @@ export function groupBucketsByYear(buckets: Bucket[]): Map<number, Bucket[]> {
 }
 
 // Total receipt count per year for display on year tabs
-export function getReceiptCountsByYear(
-  receipts: Receipt[],
-  buckets: Bucket[]
-): Map<number, number> {
+export function getReceiptCountsByYear(receipts: Receipt[], buckets: Bucket[]): Map<number, number> {
   const bucketYearMap = new Map<string, number>();
   for (const bucket of buckets) {
     bucketYearMap.set(bucket.id, bucket.year);
@@ -88,31 +78,19 @@ export function getReceiptCountsByYear(
 
 // Get unique months for a given year, sorted descending
 export function getUniqueMonthsForYear(buckets: Bucket[], year: number): number[] {
-  const months = new Set(
-    buckets.filter((b) => b.year === year).map((b) => b.month)
-  );
+  const months = new Set(buckets.filter((b) => b.year === year).map((b) => b.month));
   return [...months].sort((a, b) => b - a);
 }
 
 // Filter buckets by year and month, sorted by category asc
-export function filterBucketsByYearMonth(
-  buckets: Bucket[],
-  year: number,
-  month: number
-): Bucket[] {
+export function filterBucketsByYearMonth(buckets: Bucket[], year: number, month: number): Bucket[] {
   return buckets
     .filter((b) => b.year === year && b.month === month)
     .sort((a, b) => a.category.localeCompare(b.category));
 }
 
 // Filter receipts that belong to buckets of a given year
-export function filterReceiptsByYear(
-  receipts: Receipt[],
-  buckets: Bucket[],
-  year: number
-): Receipt[] {
-  const yearBucketIds = new Set(
-    buckets.filter((b) => b.year === year).map((b) => b.id)
-  );
+export function filterReceiptsByYear(receipts: Receipt[], buckets: Bucket[], year: number): Receipt[] {
+  const yearBucketIds = new Set(buckets.filter((b) => b.year === year).map((b) => b.id));
   return receipts.filter((r) => r.bucket_id && yearBucketIds.has(r.bucket_id));
 }

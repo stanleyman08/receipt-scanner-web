@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { ParsedReceiptData, EditedReceiptData } from '@/types/receipt';
+import { useState } from "react";
+import { EditedReceiptData, ParsedReceiptData } from "@/types/receipt";
 
 interface EditScreenProps {
   imageData: string;
@@ -12,18 +12,18 @@ interface EditScreenProps {
 
 export default function EditScreen({ imageData, parsedData, onConfirm, onRetake }: EditScreenProps) {
   const [formData, setFormData] = useState({
-    vendor: parsedData.vendor || '',
-    receipt_date: parsedData.receiptDate || '',
-    subtotal: parsedData.subtotal || '',
-    gst: parsedData.gst || '',
-    total: parsedData.total || '',
-    invoice_number: parsedData.invoiceNumber || '',
+    vendor: parsedData.vendor || "",
+    receipt_date: parsedData.receiptDate || "",
+    subtotal: parsedData.subtotal || "",
+    gst: parsedData.gst || "",
+    total: parsedData.total || "",
+    invoice_number: parsedData.invoiceNumber || "",
   });
 
   const [showFullImage, setShowFullImage] = useState(false);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const formatCurrency = (value: string): string => {
@@ -31,17 +31,17 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
     if (!trimmed) return trimmed;
 
     // Remove existing $ sign and parse the number
-    const numStr = trimmed.replace(/^\$/, '');
+    const numStr = trimmed.replace(/^\$/, "");
     const num = parseFloat(numStr);
 
     // If it's a valid number, format with 2 decimal places
     if (!isNaN(num)) {
-      return '$' + num.toFixed(2);
+      return "$" + num.toFixed(2);
     }
 
     // If not a valid number, just add $ prefix if it starts with a digit
-    if (!trimmed.startsWith('$') && /^\d/.test(trimmed)) {
-      return '$' + trimmed;
+    if (!trimmed.startsWith("$") && /^\d/.test(trimmed)) {
+      return "$" + trimmed;
     }
     return trimmed;
   };
@@ -66,7 +66,12 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
           <div className="flex flex-col items-center mb-6">
             <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center mb-3">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                />
               </svg>
             </div>
             <h2 className="text-xl font-semibold text-white">Review Receipt</h2>
@@ -81,17 +86,18 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
               className="w-full flex items-center gap-4 p-4 bg-gray-50 border-b border-gray-100 hover:bg-gray-100 transition-colors text-left"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imageData}
-                alt="Receipt thumbnail"
-                className="w-16 h-20 object-cover rounded-lg shadow"
-              />
+              <img src={imageData} alt="Receipt thumbnail" className="w-16 h-20 object-cover rounded-lg shadow" />
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-gray-900 truncate">{formData.vendor || 'Unknown Vendor'}</p>
+                <p className="font-medium text-gray-900 truncate">{formData.vendor || "Unknown Vendor"}</p>
                 <p className="text-sm text-blue-500">Tap to view full image</p>
               </div>
               <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                />
               </svg>
             </button>
 
@@ -103,7 +109,7 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
                 <input
                   type="text"
                   value={formData.vendor}
-                  onChange={(e) => handleInputChange('vendor', e.target.value)}
+                  onChange={(e) => handleInputChange("vendor", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter vendor name"
                 />
@@ -115,7 +121,7 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
                 <input
                   type="text"
                   value={formData.receipt_date}
-                  onChange={(e) => handleInputChange('receipt_date', e.target.value)}
+                  onChange={(e) => handleInputChange("receipt_date", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="YYYY/MM/DD"
                 />
@@ -128,7 +134,7 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
                   <input
                     type="text"
                     value={formData.subtotal}
-                    onChange={(e) => handleInputChange('subtotal', e.target.value)}
+                    onChange={(e) => handleInputChange("subtotal", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="$0.00"
                   />
@@ -138,7 +144,7 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
                   <input
                     type="text"
                     value={formData.gst}
-                    onChange={(e) => handleInputChange('gst', e.target.value)}
+                    onChange={(e) => handleInputChange("gst", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="$0.00"
                   />
@@ -148,7 +154,7 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
                   <input
                     type="text"
                     value={formData.total}
-                    onChange={(e) => handleInputChange('total', e.target.value)}
+                    onChange={(e) => handleInputChange("total", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold"
                     placeholder="$0.00"
                   />
@@ -161,7 +167,7 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
                 <input
                   type="text"
                   value={formData.invoice_number}
-                  onChange={(e) => handleInputChange('invoice_number', e.target.value)}
+                  onChange={(e) => handleInputChange("invoice_number", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Enter invoice number"
                 />
@@ -202,11 +208,7 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
             </svg>
           </button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageData}
-            alt="Receipt full view"
-            className="max-h-[90vh] max-w-full object-contain"
-          />
+          <img src={imageData} alt="Receipt full view" className="max-h-[90vh] max-w-full object-contain" />
         </div>
       )}
     </>

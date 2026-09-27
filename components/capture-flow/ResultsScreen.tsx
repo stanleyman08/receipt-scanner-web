@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Receipt } from '@/types/receipt';
+import { Receipt } from "@/types/receipt";
 
 interface ResultsScreenProps {
   imageData: string;
@@ -11,7 +11,7 @@ interface ResultsScreenProps {
 
 export default function ResultsScreen({ imageData, receipt, onSave, onScanAnother }: ResultsScreenProps) {
   const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '—';
+    if (!dateStr) return "—";
     return dateStr; // Already normalized to YYYY/MM/DD format
   };
 
@@ -33,49 +33,45 @@ export default function ResultsScreen({ imageData, receipt, onSave, onScanAnothe
           {/* Thumbnail */}
           <div className="flex items-center gap-4 p-4 bg-gray-50 border-b border-gray-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageData}
-              alt="Receipt thumbnail"
-              className="w-16 h-20 object-cover rounded-lg shadow"
-            />
+            <img src={imageData} alt="Receipt thumbnail" className="w-16 h-20 object-cover rounded-lg shadow" />
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-gray-900 truncate">{receipt.vendor || 'Unknown Vendor'}</p>
+              <p className="font-medium text-gray-900 truncate">{receipt.vendor || "Unknown Vendor"}</p>
               <p className="text-sm text-gray-500">{formatDate(receipt.receipt_date)}</p>
             </div>
           </div>
 
           {/* Extracted data */}
           <div className="p-4 space-y-3">
-            <div className="animate-slide-up" style={{ animationDelay: '0ms' }}>
+            <div className="animate-slide-up" style={{ animationDelay: "0ms" }}>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Vendor</p>
-              <p className="text-gray-900">{receipt.vendor || '—'}</p>
+              <p className="text-gray-900">{receipt.vendor || "—"}</p>
             </div>
 
-            <div className="animate-slide-up" style={{ animationDelay: '50ms' }}>
+            <div className="animate-slide-up" style={{ animationDelay: "50ms" }}>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Total</p>
-              <p className="text-2xl font-bold text-gray-900">{receipt.total || '—'}</p>
+              <p className="text-2xl font-bold text-gray-900">{receipt.total || "—"}</p>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              <div className="animate-slide-up" style={{ animationDelay: '100ms' }}>
+              <div className="animate-slide-up" style={{ animationDelay: "100ms" }}>
                 <p className="text-xs text-gray-500 uppercase tracking-wide">Subtotal</p>
-                <p className="text-gray-900">{receipt.subtotal || '—'}</p>
+                <p className="text-gray-900">{receipt.subtotal || "—"}</p>
               </div>
 
-              <div className="animate-slide-up" style={{ animationDelay: '125ms' }}>
+              <div className="animate-slide-up" style={{ animationDelay: "125ms" }}>
                 <p className="text-xs text-gray-500 uppercase tracking-wide">GST</p>
-                <p className="text-gray-900">{receipt.gst || '—'}</p>
+                <p className="text-gray-900">{receipt.gst || "—"}</p>
               </div>
 
-              <div className="animate-slide-up" style={{ animationDelay: '150ms' }}>
+              <div className="animate-slide-up" style={{ animationDelay: "150ms" }}>
                 <p className="text-xs text-gray-500 uppercase tracking-wide">Date</p>
                 <p className="text-gray-900">{formatDate(receipt.receipt_date)}</p>
               </div>
             </div>
 
-            <div className="animate-slide-up" style={{ animationDelay: '200ms' }}>
+            <div className="animate-slide-up" style={{ animationDelay: "200ms" }}>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Invoice #</p>
-              <p className="text-gray-900">{receipt.invoice_number || '—'}</p>
+              <p className="text-gray-900">{receipt.invoice_number || "—"}</p>
             </div>
           </div>
         </div>
