@@ -12,6 +12,7 @@ import ExportButton from "@/components/ExportButton";
 import ReceiptTable from "@/components/ReceiptTable";
 import { authClient } from "@/lib/auth-client";
 import {
+  bucketForDate,
   filterBucketsByYearMonth,
   filterByBucket,
   filterReceiptsByYear,
@@ -21,7 +22,6 @@ import {
   getUniqueMonthsForYear,
   getUniqueYears,
   sortBuckets,
-  suggestBucket,
 } from "@/lib/bucket";
 import { downloadYearExcel } from "@/lib/excel";
 import { optimizeImageForOCR } from "@/lib/image-utils";
@@ -204,12 +204,7 @@ export default function ReceiptsApp({ initialBuckets, initialReceipts }: Receipt
 
       if (result.success) {
         // File the receipt under its receipt date's month, in the category being scanned into
-        const bucket = suggestBucket({
-          receiptDate: result.details.receipt_date,
-          selected: scanningInto,
-          current: scanningInto,
-          pickedByHand: false,
-        });
+        const bucket = bucketForDate(result.details.receipt_date, scanningInto);
         setCaptureState({
           status: "editing",
           imageData,

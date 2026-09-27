@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { suggestBucket } from "@/lib/bucket";
+import { bucketForDate, suggestBucket } from "@/lib/bucket";
 import { centsToInput, parseAmountCents } from "@/lib/money";
 import type { BucketKey } from "@/types/bucket";
 import type { ReceiptReview } from "@/types/capture-flow";
@@ -22,14 +22,8 @@ export function useReceiptForm(initial: ReceiptReview) {
   const [bucket, setBucket] = useState(initial.bucket);
   const [pickedByHand, setPickedByHand] = useState(initial.pickedByHand);
   const { selected } = initial;
-
-  // Where the receipt date points, offered in the picker even after another bucket was picked by hand.
-  const suggested = suggestBucket({
-    receiptDate: fields.receiptDate || null,
-    selected,
-    current: bucket,
-    pickedByHand: false,
-  });
+  // Offered in the picker even after another bucket was picked by hand.
+  const suggested = bucketForDate(fields.receiptDate || null, selected);
 
   const setField = (field: ReceiptFormField, value: string) => {
     setFields((prev) => ({ ...prev, [field]: value }));

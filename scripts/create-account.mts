@@ -29,9 +29,11 @@ const existing = await context.internalAdapter.findUserByEmail(email, { includeA
 if (!existing) {
   // There's only one shared account. A different email is most likely a typo, and creating a second account would
   // leave the old password working.
-  const [other] = await context.internalAdapter.listUsers(1);
-  if (other) {
-    console.error(`The shared account is ${other.email}. Set ACCOUNT_EMAIL to that address to reset its password.`);
+  const [sharedAccount] = await context.internalAdapter.listUsers(1);
+  if (sharedAccount) {
+    console.error(
+      `The shared account is ${sharedAccount.email}. Set ACCOUNT_EMAIL to that address to reset its password.`,
+    );
     process.exit(1);
   }
 }

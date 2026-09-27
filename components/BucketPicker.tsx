@@ -18,15 +18,12 @@ function optionValue(bucket: BucketKey): string {
   return `${bucket.year}-${bucket.month}-${bucket.category}`;
 }
 
-// The existing buckets, plus the chosen and suggested ones when they don't exist yet: those are created when the
-// receipt is saved.
+// The existing buckets, plus the chosen and suggested ones when they don't exist yet. Whichever new bucket is chosen
+// is created when the receipt is saved.
 export default function BucketPicker({ id, value, suggested, buckets, onChange, className }: BucketPickerProps) {
   const isNew = (bucket: BucketKey) => !bucketExists(buckets, bucket.year, bucket.month, bucket.category);
-  const newBuckets = [value, suggested].filter(
-    (bucket, index, all) =>
-      isNew(bucket) && all.findIndex((other) => optionValue(other) === optionValue(bucket)) === index,
-  );
-  const options: BucketKey[] = [...newBuckets, ...sortBuckets(buckets)];
+  const candidates = optionValue(value) === optionValue(suggested) ? [value] : [value, suggested];
+  const options: BucketKey[] = [...candidates.filter(isNew), ...sortBuckets(buckets)];
 
   return (
     <select
