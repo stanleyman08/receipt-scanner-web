@@ -4,6 +4,7 @@ import { nextCookies } from "better-auth/next-js";
 
 const THIRTY_DAYS_IN_SECONDS = 60 * 60 * 24 * 30;
 const ONE_DAY_IN_SECONDS = 60 * 60 * 24;
+const ONE_MINUTE_IN_SECONDS = 60;
 // The sign-in page is public and the password is shared, so attempts are limited per IP address.
 const SIGN_IN_ATTEMPTS_PER_MINUTE = 5;
 const LOCAL_URL = "http://localhost:3000";
@@ -38,12 +39,12 @@ export function createAuth({ allowSignUp = false }: { allowSignUp?: boolean } = 
     rateLimit: {
       // Kept in the database so the limit holds across Vercel's instances.
       storage: "database",
-      customRules: { "/sign-in/email": { window: 60, max: SIGN_IN_ATTEMPTS_PER_MINUTE } },
+      customRules: { "/sign-in/email": { window: ONE_MINUTE_IN_SECONDS, max: SIGN_IN_ATTEMPTS_PER_MINUTE } },
     },
     trustedOrigins: trustedOrigins(),
     plugins: [nextCookies()],
   });
 }
 
-// The app's instance. Sign-up is off: the one shared account comes from scripts/create-account.ts.
+// The app's instance. Sign-up is off: the one shared account comes from scripts/create-account.mts.
 export const auth = createAuth();

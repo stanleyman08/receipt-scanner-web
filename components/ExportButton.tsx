@@ -6,11 +6,10 @@ import type { Receipt } from "@/types/receipt";
 
 interface ExportButtonProps {
   receipts: Receipt[];
-  disabled?: boolean;
   bucket?: Bucket | null;
 }
 
-export default function ExportButton({ receipts, disabled, bucket }: ExportButtonProps) {
+export default function ExportButton({ receipts, bucket }: ExportButtonProps) {
   const handleExport = async () => {
     if (!bucket) return;
     await downloadBucketExcel(receipts, bucket);
@@ -20,7 +19,7 @@ export default function ExportButton({ receipts, disabled, bucket }: ExportButto
     <button
       type="button"
       onClick={handleExport}
-      disabled={disabled || receipts.length === 0}
+      disabled={receipts.length === 0}
       className="bg-green-600 text-white px-3 md:px-6 py-2 md:py-3 text-sm md:text-base rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
     >
       <svg

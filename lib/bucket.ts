@@ -56,23 +56,6 @@ export function getUniqueYears(buckets: Bucket[]): number[] {
   return [...years].sort((a, b) => b - a);
 }
 
-// Group buckets by year, each group sorted by month desc / category asc
-export function groupBucketsByYear(buckets: Bucket[]): Map<number, Bucket[]> {
-  const map = new Map<number, Bucket[]>();
-  for (const bucket of buckets) {
-    const group = map.get(bucket.year);
-    if (group) {
-      group.push(bucket);
-    } else {
-      map.set(bucket.year, [bucket]);
-    }
-  }
-  for (const [year, group] of map) {
-    map.set(year, group.sort(compareBuckets));
-  }
-  return map;
-}
-
 // Total receipt count per year for display on year tabs
 export function getReceiptCountsByYear(receipts: Receipt[], buckets: Bucket[]): Map<number, number> {
   const bucketYearMap = new Map<string, number>();

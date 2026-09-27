@@ -40,15 +40,15 @@ export function useReceiptForm(initial: ReceiptReview) {
     const amounts = texts.map((text) => (text.trim() === "" ? null : parseAmountCents(text)));
     if (texts.some((text, i) => text.trim() !== "" && amounts[i] === null)) return null;
 
-    const [subtotal_cents, gst_cents, total_cents] = amounts;
+    const [subtotalCents, gstCents, totalCents] = amounts;
     return {
       details: {
         vendor: fields.vendor.trim() || null,
         receipt_date: fields.receiptDate || null,
         invoice_number: fields.invoiceNumber.trim() || null,
-        subtotal_cents,
-        gst_cents,
-        total_cents,
+        subtotal_cents: subtotalCents,
+        gst_cents: gstCents,
+        total_cents: totalCents,
       },
       bucket,
       pickedByHand,

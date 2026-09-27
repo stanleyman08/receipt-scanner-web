@@ -1,26 +1,25 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { z } from "zod";
+import { getSession, SIGNED_OUT_MESSAGE } from "@/lib/auth-session";
 import { analyzeReceipt } from "@/lib/textract";
 import type { ScanResponse } from "@/types/receipt";
 
 const DATA_URL_PREFIX = /^data:image\/\w+;base64,/;
+const scanRequestSchema = z.object({ image: z.string().min(1) });
 
 export async function POST(request: NextRequest): Promise<NextResponse<ScanResponse>> {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) {
-    return NextResponse.json(
-      { success: false, error: "Your session has ended. Sign in again to continue." },
-      { status: 401 },
-    );
+  if (!(await getSession())) {
+    return NextResponse.json({ success: false, error: SIGNED_OUT_MESSAGE }, { status: 401 });
+  }
+
+  // A body that isn't JSON is treated like one without a photo.
+  const parsed = scanRequestSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ success: false, error: "No photo was sent. Take the photo again." }, { status: 400 });
   }
 
   try {
-    const { image } = await request.json();
-    if (typeof image !== "string" || image === "") {
-      return NextResponse.json({ success: false, error: "No photo was sent. Take the photo again." }, { status: 400 });
-    }
-
-    const imageBytes = Buffer.from(image.replace(DATA_URL_PREFIX, ""), "base64");
+    const imageBytes = Buffer.from(parsed.data.image.replace(DATA_URL_PREFIX, ""), "base64");
     const details = await analyzeReceipt(imageBytes);
     return NextResponse.json({ success: true, details });
   } catch (error) {
