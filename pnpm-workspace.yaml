@@ -1,0 +1,5 @@
+# Install scripts pnpm may run. Both ship prebuilt binaries as optional dependencies,
+# so their scripts (a binary check with a build-from-source fallback) are skipped.
+allowBuilds:
+  sharp: false
+  unrs-resolver: false
