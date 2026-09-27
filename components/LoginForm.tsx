@@ -4,10 +4,17 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
+const WRONG_CREDENTIALS = 401;
 const TOO_MANY_ATTEMPTS = 429;
 const WRONG_DETAILS = "That email and password don't match. Check them and try again.";
 const RATE_LIMITED = "Too many sign-in attempts. Wait a minute, then try again.";
 const SIGN_IN_FAILED = "Signing in didn't work. Check your connection and try again.";
+
+function signInErrorMessage(status: number): string {
+  if (status === WRONG_CREDENTIALS) return WRONG_DETAILS;
+  if (status === TOO_MANY_ATTEMPTS) return RATE_LIMITED;
+  return SIGN_IN_FAILED;
+}
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -25,14 +32,15 @@ export default function LoginForm() {
       // Through Better Auth's HTTP endpoint, which applies the sign-in rate limit.
       const { error: signInError } = await authClient.signIn.email({ email, password });
       if (signInError) {
-        setError(signInError.status === TOO_MANY_ATTEMPTS ? RATE_LIMITED : WRONG_DETAILS);
+        setError(signInErrorMessage(signInError.status));
+        setIsLoading(false);
         return;
       }
+      // Stays "Signing in…" until the receipts page replaces this one.
       router.push("/");
       router.refresh();
     } catch {
       setError(SIGN_IN_FAILED);
-    } finally {
       setIsLoading(false);
     }
   };
