@@ -17,12 +17,12 @@ const TOTAL_TYPES = ["TOTAL", "AMOUNT_DUE", "GRAND_TOTAL"];
  * The details a scan pre-fills from Textract's AnalyzeExpense result. Anything the receipt doesn't show, or that
  * can't be read, stays null for the user to fill in: nothing is worked out or assumed.
  */
-export function readReceipt(document: ExpenseDocument): ReceiptDetails {
+export function readReceipt(document: ExpenseDocument, scannedOn: Date = new Date()): ReceiptDetails {
   const fields = document.SummaryFields ?? [];
 
   return {
     vendor: valueOfType(fields, VENDOR_TYPES),
-    receipt_date: parseReceiptDate(valueOfType(fields, DATE_TYPES)),
+    receipt_date: parseReceiptDate(valueOfType(fields, DATE_TYPES), scannedOn),
     invoice_number: valueOfLabel(fields, INVOICE_LABELS) ?? valueOfType(fields, INVOICE_TYPES),
     subtotal_cents: parseAmountCents(valueOfType(fields, SUBTOTAL_TYPES)),
     gst_cents: parseAmountCents(valueOfType(fields, GST_TYPES) ?? valueOfLabel(fields, GST_LABELS, TAX_ID_TYPES)),
@@ -68,16 +68,23 @@ const YEAR_FIRST = /^(\d{4}|\d{2})[-/.](\d{1,2})[-/.](\d{1,2})$/;
 // A month name makes the order unambiguous: "Mar 28, 2026" or "28 March 2026" / "28-Mar-26".
 const MONTH_NAME_THEN_DAY = /^([a-z]{3,})\.?[\s-]+(\d{1,2}),?[\s-]+(\d{4}|\d{2})$/i;
 const DAY_THEN_MONTH_NAME = /^(\d{1,2})[\s-]+([a-z]{3,})\.?,?[\s-]+(\d{4}|\d{2})$/i;
+// A weekday before the date or a time after it, as in "Sat, Mar 28, 2026" or "2026-03-28 14:32", is dropped.
+const LEADING_WEEKDAY = /^(mon|tue|wed|thu|fri|sat|sun)[a-z]*\.?,?\s+/i;
+const TRAILING_TIME = /\s+\d{1,2}:\d{2}(:\d{2})?(\s*[ap]\.?m\.?)?$/i;
 
 // Numeric dates in any other order (28/03/2026, 03/28/2026) are ambiguous, so they stay blank.
-function parseReceiptDate(value: string | null): string | null {
+function parseReceiptDate(value: string | null, scannedOn: Date): string | null {
   if (!value) return null;
-  const text = value.trim();
+  const text = value.trim().replace(LEADING_WEEKDAY, "").replace(TRAILING_TIME, "");
 
   const yearFirst = YEAR_FIRST.exec(text);
   if (yearFirst) {
     const [, year, month, day] = yearFirst;
-    return toIsoDate(fullYear(year), Number(month), Number(day));
+    const receiptYear = fullYear(year);
+    // A two-digit year first could also be a day (27/09/26 is 27 September 2026 on some receipts), so it is only
+    // trusted when it's this year or last year.
+    if (year.length === 2 && !isRecentYear(receiptYear, scannedOn)) return null;
+    return toIsoDate(receiptYear, Number(month), Number(day));
   }
   const monthNameThenDay = MONTH_NAME_THEN_DAY.exec(text);
   if (monthNameThenDay) {
@@ -94,6 +101,11 @@ function parseReceiptDate(value: string | null): string | null {
 
 function fullYear(year: string): number {
   return year.length === 2 ? CENTURY + Number(year) : Number(year);
+}
+
+function isRecentYear(year: number, scannedOn: Date): boolean {
+  const scanYear = scannedOn.getFullYear();
+  return year === scanYear || year === scanYear - 1;
 }
 
 /** 1–12 for a month name or abbreviation, 0 for anything else. */
