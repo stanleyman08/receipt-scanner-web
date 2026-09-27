@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { Receipt } from '@/types/receipt';
-import { Bucket } from '@/types/bucket';
-import { downloadBucketExcel } from '@/lib/excel';
+import { downloadBucketExcel } from "@/lib/excel";
+import type { Bucket } from "@/types/bucket";
+import type { Receipt } from "@/types/receipt";
 
 interface ExportButtonProps {
   receipts: Receipt[];
@@ -18,11 +18,13 @@ export default function ExportButton({ receipts, disabled, bucket }: ExportButto
 
   return (
     <button
+      type="button"
       onClick={handleExport}
       disabled={disabled || receipts.length === 0}
       className="bg-green-600 text-white px-3 md:px-6 py-2 md:py-3 text-sm md:text-base rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
     >
       <svg
+        aria-hidden="true"
         xmlns="http://www.w3.org/2000/svg"
         className="h-4 w-4 md:h-5 md:w-5"
         viewBox="0 0 20 20"

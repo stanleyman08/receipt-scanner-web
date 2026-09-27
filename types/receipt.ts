@@ -23,7 +23,7 @@ export interface ReceiptInsert {
 }
 
 // Type for edited receipt data before bucket_id is added
-export type EditedReceiptData = Omit<ReceiptInsert, 'bucket_id'>;
+export type EditedReceiptData = Omit<ReceiptInsert, "bucket_id">;
 
 export interface ParsedReceiptData {
   subtotal: string | null;

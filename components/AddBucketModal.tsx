@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { Bucket, BUCKET_CATEGORIES, MONTH_NAMES, BucketCategory } from '@/types/bucket';
-import { bucketExists } from '@/lib/bucket';
+import { useEffect, useRef, useState } from "react";
+import { bucketExists } from "@/lib/bucket";
+import { BUCKET_CATEGORIES, type Bucket, type BucketCategory, MONTH_NAMES } from "@/types/bucket";
 
 interface AddBucketModalProps {
   isOpen: boolean;
@@ -11,18 +11,13 @@ interface AddBucketModalProps {
   onAdd: (year: number, month: number, category: BucketCategory) => void;
 }
 
-export default function AddBucketModal({
-  isOpen,
-  existingBuckets,
-  onClose,
-  onAdd,
-}: AddBucketModalProps) {
+export default function AddBucketModal({ isOpen, existingBuckets, onClose, onAdd }: AddBucketModalProps) {
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
 
   const [year, setYear] = useState((currentYear - 1).toString());
   const [month, setMonth] = useState(currentMonth.toString());
-  const [category, setCategory] = useState<BucketCategory>('Food');
+  const [category, setCategory] = useState<BucketCategory>("Food");
   const [error, setError] = useState<string | null>(null);
   const yearInputRef = useRef<HTMLInputElement>(null);
 
@@ -32,7 +27,7 @@ export default function AddBucketModal({
       const timeoutId = setTimeout(() => {
         setYear((currentYear - 1).toString());
         setMonth(currentMonth.toString());
-        setCategory('Food');
+        setCategory("Food");
         setError(null);
         yearInputRef.current?.focus();
       }, 0);
@@ -48,7 +43,7 @@ export default function AddBucketModal({
     const monthNum = parseInt(month, 10);
 
     if (isNaN(yearNum)) {
-      setError('Please enter a valid year');
+      setError("Please enter a valid year");
       return;
     }
 
@@ -58,7 +53,7 @@ export default function AddBucketModal({
     }
 
     if (bucketExists(existingBuckets, yearNum, monthNum, category)) {
-      setError('This bucket already exists');
+      setError("This bucket already exists");
       return;
     }
 
@@ -69,21 +64,19 @@ export default function AddBucketModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
+      <button
+        type="button"
+        aria-label="Close"
+        tabIndex={-1}
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
       />
       <div className="relative bg-white rounded-lg shadow-xl w-full max-w-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Add Bucket
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Bucket</h2>
         <form onSubmit={handleSubmit}>
           {/* Year input */}
           <div className="mb-4">
-            <label
-              htmlFor="bucket-year"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="bucket-year" className="block text-sm font-medium text-gray-700 mb-1">
               Year
             </label>
             <input
@@ -104,10 +97,7 @@ export default function AddBucketModal({
 
           {/* Month dropdown */}
           <div className="mb-4">
-            <label
-              htmlFor="bucket-month"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="bucket-month" className="block text-sm font-medium text-gray-700 mb-1">
               Month
             </label>
             <select
@@ -120,7 +110,7 @@ export default function AddBucketModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {MONTH_NAMES.map((name, index) => (
-                <option key={index + 1} value={index + 1}>
+                <option key={name} value={index + 1}>
                   {name}
                 </option>
               ))}
@@ -129,10 +119,7 @@ export default function AddBucketModal({
 
           {/* Category dropdown */}
           <div className="mb-4">
-            <label
-              htmlFor="bucket-category"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
+            <label htmlFor="bucket-category" className="block text-sm font-medium text-gray-700 mb-1">
               Category
             </label>
             <select
@@ -152,9 +139,7 @@ export default function AddBucketModal({
             </select>
           </div>
 
-          {error && (
-            <p className="mb-4 text-sm text-red-600">{error}</p>
-          )}
+          {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
 
           <div className="flex gap-3">
             <button

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Receipt } from '@/types/receipt';
+import { useEffect, useId, useState } from "react";
+import type { Receipt } from "@/types/receipt";
 
 interface EditReceiptModalProps {
   receipt: Receipt | null;
@@ -11,20 +11,15 @@ interface EditReceiptModalProps {
   onSave: (id: string, updates: Partial<Receipt>) => void;
 }
 
-export default function EditReceiptModal({
-  receipt,
-  isOpen,
-  isSaving,
-  onClose,
-  onSave,
-}: EditReceiptModalProps) {
+export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, onSave }: EditReceiptModalProps) {
+  const idPrefix = useId();
   const [formData, setFormData] = useState({
-    vendor: '',
-    receipt_date: '',
-    subtotal: '',
-    gst: '',
-    total: '',
-    invoice_number: '',
+    vendor: "",
+    receipt_date: "",
+    subtotal: "",
+    gst: "",
+    total: "",
+    invoice_number: "",
   });
 
   useEffect(() => {
@@ -32,12 +27,12 @@ export default function EditReceiptModal({
       // Use timeout to avoid synchronous setState in effect
       const timeoutId = setTimeout(() => {
         setFormData({
-          vendor: receipt.vendor || '',
-          receipt_date: receipt.receipt_date || '',
-          subtotal: receipt.subtotal || '',
-          gst: receipt.gst || '',
-          total: receipt.total || '',
-          invoice_number: receipt.invoice_number || '',
+          vendor: receipt.vendor || "",
+          receipt_date: receipt.receipt_date || "",
+          subtotal: receipt.subtotal || "",
+          gst: receipt.gst || "",
+          total: receipt.total || "",
+          invoice_number: receipt.invoice_number || "",
         });
       }, 0);
       return () => clearTimeout(timeoutId);
@@ -53,17 +48,17 @@ export default function EditReceiptModal({
     if (!trimmed) return trimmed;
 
     // Remove existing $ sign and parse the number
-    const numStr = trimmed.replace(/^\$/, '');
+    const numStr = trimmed.replace(/^\$/, "");
     const num = parseFloat(numStr);
 
     // If it's a valid number, format with 2 decimal places
     if (!isNaN(num)) {
-      return '$' + num.toFixed(2);
+      return "$" + num.toFixed(2);
     }
 
     // If not a valid number, just add $ prefix if it starts with a digit
-    if (!trimmed.startsWith('$') && /^\d/.test(trimmed)) {
-      return '$' + trimmed;
+    if (!trimmed.startsWith("$") && /^\d/.test(trimmed)) {
+      return "$" + trimmed;
     }
     return trimmed;
   };
@@ -87,7 +82,10 @@ export default function EditReceiptModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
+      <button
+        type="button"
+        aria-label="Close"
+        tabIndex={-1}
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
       />
@@ -98,10 +96,12 @@ export default function EditReceiptModal({
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Edit Receipt</h2>
           <button
+            type="button"
+            aria-label="Close"
             onClick={onClose}
             className="p-1 text-gray-400 hover:text-gray-600 rounded"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -111,13 +111,14 @@ export default function EditReceiptModal({
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Vendor */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor={`${idPrefix}-vendor`} className="block text-sm font-medium text-gray-700 mb-1">
               Vendor
             </label>
             <input
+              id={`${idPrefix}-vendor`}
               type="text"
               value={formData.vendor}
-              onChange={(e) => handleInputChange('vendor', e.target.value)}
+              onChange={(e) => handleInputChange("vendor", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter vendor name"
             />
@@ -125,13 +126,14 @@ export default function EditReceiptModal({
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor={`${idPrefix}-date`} className="block text-sm font-medium text-gray-700 mb-1">
               Date
             </label>
             <input
+              id={`${idPrefix}-date`}
               type="text"
               value={formData.receipt_date}
-              onChange={(e) => handleInputChange('receipt_date', e.target.value)}
+              onChange={(e) => handleInputChange("receipt_date", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="YYYY/MM/DD"
             />
@@ -140,37 +142,40 @@ export default function EditReceiptModal({
           {/* Amount fields */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`${idPrefix}-subtotal`} className="block text-sm font-medium text-gray-700 mb-1">
                 Subtotal
               </label>
               <input
+                id={`${idPrefix}-subtotal`}
                 type="text"
                 value={formData.subtotal}
-                onChange={(e) => handleInputChange('subtotal', e.target.value)}
+                onChange={(e) => handleInputChange("subtotal", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="$0.00"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`${idPrefix}-gst`} className="block text-sm font-medium text-gray-700 mb-1">
                 GST
               </label>
               <input
+                id={`${idPrefix}-gst`}
                 type="text"
                 value={formData.gst}
-                onChange={(e) => handleInputChange('gst', e.target.value)}
+                onChange={(e) => handleInputChange("gst", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="$0.00"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`${idPrefix}-total`} className="block text-sm font-medium text-gray-700 mb-1">
                 Total
               </label>
               <input
+                id={`${idPrefix}-total`}
                 type="text"
                 value={formData.total}
-                onChange={(e) => handleInputChange('total', e.target.value)}
+                onChange={(e) => handleInputChange("total", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold"
                 placeholder="$0.00"
               />
@@ -179,13 +184,14 @@ export default function EditReceiptModal({
 
           {/* Invoice Number */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor={`${idPrefix}-invoice`} className="block text-sm font-medium text-gray-700 mb-1">
               Invoice #
             </label>
             <input
+              id={`${idPrefix}-invoice`}
               type="text"
               value={formData.invoice_number}
-              onChange={(e) => handleInputChange('invoice_number', e.target.value)}
+              onChange={(e) => handleInputChange("invoice_number", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter invoice number"
             />
@@ -206,7 +212,7 @@ export default function EditReceiptModal({
               disabled={isSaving}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSaving ? 'Saving...' : 'Save Changes'}
+              {isSaving ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>

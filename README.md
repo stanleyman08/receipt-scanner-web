@@ -8,13 +8,13 @@ A web application for scanning receipts using your phone's camera, extracting da
 - Automatic data extraction (vendor, date, subtotal, GST, total, invoice number)
 - Cloud storage with Supabase
 - Email/password authentication
-- Export receipts to CSV
+- Export receipts to Excel
 - Responsive design for mobile and desktop
 
 ## Prerequisites
 
-- Node.js 18+
-- npm, yarn, pnpm, or bun
+- Node.js 24 (see `.nvmrc`)
+- pnpm (the version is pinned in `package.json`)
 - AWS account with Textract access
 - Supabase account
 
@@ -25,7 +25,7 @@ A web application for scanning receipts using your phone's camera, extracting da
 ```bash
 git clone <your-repo-url>
 cd receipt-scanner-web
-npm install
+pnpm install   # also installs the git hooks
 ```
 
 ### 2. Environment Variables
@@ -88,12 +88,19 @@ Note: AWS Textract is available in select regions. The default region is `us-eas
 
 ```bash
 # Development
-npm run dev
+pnpm dev
 
 # Production build
-npm run build
-npm start
+pnpm build
+pnpm start
+
+# Checks
+pnpm lint        # Biome: formatting and lint
+pnpm typecheck
+pnpm test        # Vitest
 ```
+
+Lefthook runs Biome on staged files before each commit, and the tests and type check before each push.
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
@@ -104,6 +111,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **Database**: Supabase (PostgreSQL)
 - **OCR**: AWS Textract (AnalyzeExpense API)
 - **Camera**: react-webcam
+- **Tooling**: pnpm, Biome, Lefthook, Vitest with Testing Library
 
 ## Project Structure
 
@@ -120,16 +128,16 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 │   ├── CameraCapture.tsx    # Webcam capture component
 │   ├── ReceiptCard.tsx      # Receipt display card
 │   ├── ReceiptList.tsx      # Receipt list container
-│   └── ExportButton.tsx     # CSV export button
+│   └── ExportButton.tsx     # Excel export button
 ├── lib/
 │   ├── supabase/
 │   │   ├── client.ts        # Browser Supabase client (auth)
 │   │   ├── server.ts        # Server Supabase client (auth)
 │   │   └── middleware.ts    # Session management
 │   ├── supabase.ts          # Supabase database queries
-│   ├── textract.ts          # AWS Textract integration
-│   └── csv.ts               # CSV export utilities
+│   └── textract.ts          # AWS Textract integration
 ├── middleware.ts            # Next.js auth middleware
+├── tests/                   # Vitest tests for lib code
 └── types/
     ├── receipt.ts           # Receipt type definitions
     └── capture-flow.ts      # Capture flow state types

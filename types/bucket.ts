@@ -12,22 +12,22 @@ export interface BucketInsert {
   category: BucketCategory;
 }
 
-export const BUCKET_CATEGORIES = ['Food', 'Supply', 'Other A'] as const;
+export const BUCKET_CATEGORIES = ["Food", "Supply", "Other A"] as const;
 export type BucketCategory = (typeof BUCKET_CATEGORIES)[number];
 
 export const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ] as const;
 
 export function formatBucketLabel(bucket: Bucket): string {
