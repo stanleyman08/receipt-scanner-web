@@ -12,6 +12,6 @@ export default defineConfig({
     // Component tests opt into a DOM with a `// @vitest-environment jsdom` comment.
     environment: "node",
     setupFiles: ["./tests/setup.ts"],
-    include: ["tests/**/*.test.ts", "components/**/*.test.tsx"],
+    include: ["tests/**/*.test.{ts,tsx}", "{app,components,lib}/**/*.test.{ts,tsx}"],
   },
 });

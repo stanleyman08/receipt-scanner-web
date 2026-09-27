@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { EditedReceiptData, ParsedReceiptData } from "@/types/receipt";
+import type { EditedReceiptData, ParsedReceiptData } from "@/types/receipt";
 
 interface EditScreenProps {
   imageData: string;
@@ -11,7 +11,7 @@ interface EditScreenProps {
 }
 
 export default function EditScreen({ imageData, parsedData, onConfirm, onRetake }: EditScreenProps) {
-  const fieldId = useId();
+  const idPrefix = useId();
   const [formData, setFormData] = useState({
     vendor: parsedData.vendor || "",
     receipt_date: parsedData.receiptDate || "",
@@ -120,13 +120,13 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
               {/* Vendor */}
               <div>
                 <label
-                  htmlFor={`${fieldId}-vendor`}
+                  htmlFor={`${idPrefix}-vendor`}
                   className="block text-xs text-gray-500 uppercase tracking-wide mb-1"
                 >
                   Vendor
                 </label>
                 <input
-                  id={`${fieldId}-vendor`}
+                  id={`${idPrefix}-vendor`}
                   type="text"
                   value={formData.vendor}
                   onChange={(e) => handleInputChange("vendor", e.target.value)}
@@ -137,11 +137,14 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
 
               {/* Date */}
               <div>
-                <label htmlFor={`${fieldId}-date`} className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
+                <label
+                  htmlFor={`${idPrefix}-date`}
+                  className="block text-xs text-gray-500 uppercase tracking-wide mb-1"
+                >
                   Date
                 </label>
                 <input
-                  id={`${fieldId}-date`}
+                  id={`${idPrefix}-date`}
                   type="text"
                   value={formData.receipt_date}
                   onChange={(e) => handleInputChange("receipt_date", e.target.value)}
@@ -154,13 +157,13 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label
-                    htmlFor={`${fieldId}-subtotal`}
+                    htmlFor={`${idPrefix}-subtotal`}
                     className="block text-xs text-gray-500 uppercase tracking-wide mb-1"
                   >
                     Subtotal
                   </label>
                   <input
-                    id={`${fieldId}-subtotal`}
+                    id={`${idPrefix}-subtotal`}
                     type="text"
                     value={formData.subtotal}
                     onChange={(e) => handleInputChange("subtotal", e.target.value)}
@@ -170,13 +173,13 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
                 </div>
                 <div>
                   <label
-                    htmlFor={`${fieldId}-gst`}
+                    htmlFor={`${idPrefix}-gst`}
                     className="block text-xs text-gray-500 uppercase tracking-wide mb-1"
                   >
                     GST
                   </label>
                   <input
-                    id={`${fieldId}-gst`}
+                    id={`${idPrefix}-gst`}
                     type="text"
                     value={formData.gst}
                     onChange={(e) => handleInputChange("gst", e.target.value)}
@@ -186,13 +189,13 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
                 </div>
                 <div>
                   <label
-                    htmlFor={`${fieldId}-total`}
+                    htmlFor={`${idPrefix}-total`}
                     className="block text-xs text-gray-500 uppercase tracking-wide mb-1"
                   >
                     Total
                   </label>
                   <input
-                    id={`${fieldId}-total`}
+                    id={`${idPrefix}-total`}
                     type="text"
                     value={formData.total}
                     onChange={(e) => handleInputChange("total", e.target.value)}
@@ -205,13 +208,13 @@ export default function EditScreen({ imageData, parsedData, onConfirm, onRetake 
               {/* Invoice Number */}
               <div>
                 <label
-                  htmlFor={`${fieldId}-invoice`}
+                  htmlFor={`${idPrefix}-invoice`}
                   className="block text-xs text-gray-500 uppercase tracking-wide mb-1"
                 >
                   Invoice #
                 </label>
                 <input
-                  id={`${fieldId}-invoice`}
+                  id={`${idPrefix}-invoice`}
                   type="text"
                   value={formData.invoice_number}
                   onChange={(e) => handleInputChange("invoice_number", e.target.value)}

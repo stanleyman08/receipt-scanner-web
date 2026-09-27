@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Receipt Scanner",
-  description: "Scan receipts with your phone and export to CSV",
+  description: "Scan receipts with your phone and export to Excel",
 };
 
 export default function RootLayout({

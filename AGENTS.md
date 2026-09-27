@@ -25,7 +25,7 @@ Every implementation or fix, whether it arrives as `mattpocock-skills:implement`
    - `mattpocock-skills:tdd` for any behaviour change: write or extend the test first (`tests/` for code in `lib/`, a `*.test.tsx` file next to the component for UI).
    - `mattpocock-skills:diagnosing-bugs` for any fix: find the root cause before patching.
    - Any other installed skill that directly applies. Loading one costs little; missing one costs a review round.
-2. **Verify:** `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build` must pass. Lefthook runs Biome on every commit and the tests plus the type check on every push. For UI changes, also check the page in a browser with `pnpm dev`, at phone and desktop widths. Dev has no local stand-in or test account: it uses the Supabase project and AWS credentials in `.env.local`. Ask the user to sign in, and ask before saving, editing or deleting receipts or running a scan (each scan is a billed Textract call).
+2. **Verify** (Node 24 from `.nvmrc`, pnpm only): `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build` must pass. Lefthook runs Biome on every commit and the tests plus the type check on every push. For UI changes, also check the page in a browser with `pnpm dev`, at phone and desktop widths. Dev has no local stand-in or test account: it uses the Supabase project and AWS credentials in `.env.local`. Ask the user to sign in, and ask before saving, editing or deleting receipts or running a scan (each scan is a billed Textract call).
 3. **After the change passes, review the diff with:**
    - `mattpocock-skills:code-review` for standards and spec, and `code-review` for bugs.
    - `web-design-guidelines` when it touched UI.

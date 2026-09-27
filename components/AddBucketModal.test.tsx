@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import AddBucketModal from "@/components/AddBucketModal";
 import type { Bucket } from "@/types/bucket";
@@ -14,15 +14,19 @@ async function openModal(existingBuckets: Bucket[] = []) {
   return { user, onAdd };
 }
 
+async function submitBucketForm(user: UserEvent, year: string, month: string, category: string) {
+  await user.clear(screen.getByLabelText("Year"));
+  await user.type(screen.getByLabelText("Year"), year);
+  await user.selectOptions(screen.getByLabelText("Month"), month);
+  await user.selectOptions(screen.getByLabelText("Category"), category);
+  await user.click(screen.getByRole("button", { name: "Create Bucket" }));
+}
+
 describe("AddBucketModal", () => {
   it("creates a bucket for the chosen year, month and category", async () => {
     const { user, onAdd } = await openModal();
 
-    await user.clear(screen.getByLabelText("Year"));
-    await user.type(screen.getByLabelText("Year"), "2025");
-    await user.selectOptions(screen.getByLabelText("Month"), "March");
-    await user.selectOptions(screen.getByLabelText("Category"), "Supply");
-    await user.click(screen.getByRole("button", { name: "Create Bucket" }));
+    await submitBucketForm(user, "2025", "March", "Supply");
 
     expect(onAdd).toHaveBeenCalledWith(2025, 3, "Supply");
   });
@@ -37,11 +41,7 @@ describe("AddBucketModal", () => {
     };
     const { user, onAdd } = await openModal([march2025Supply]);
 
-    await user.clear(screen.getByLabelText("Year"));
-    await user.type(screen.getByLabelText("Year"), "2025");
-    await user.selectOptions(screen.getByLabelText("Month"), "March");
-    await user.selectOptions(screen.getByLabelText("Category"), "Supply");
-    await user.click(screen.getByRole("button", { name: "Create Bucket" }));
+    await submitBucketForm(user, "2025", "March", "Supply");
 
     expect(screen.getByText("This bucket already exists")).toBeInTheDocument();
     expect(onAdd).not.toHaveBeenCalled();

@@ -8,7 +8,7 @@ A web application for scanning receipts using your phone's camera, extracting da
 - Automatic data extraction (vendor, date, subtotal, GST, total, invoice number)
 - Cloud storage with Supabase
 - Email/password authentication
-- Export receipts to CSV
+- Export receipts to Excel
 - Responsive design for mobile and desktop
 
 ## Prerequisites

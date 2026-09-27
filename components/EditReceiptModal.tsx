@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { Receipt } from "@/types/receipt";
+import type { Receipt } from "@/types/receipt";
 
 interface EditReceiptModalProps {
   receipt: Receipt | null;
@@ -12,7 +12,7 @@ interface EditReceiptModalProps {
 }
 
 export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, onSave }: EditReceiptModalProps) {
-  const fieldId = useId();
+  const idPrefix = useId();
   const [formData, setFormData] = useState({
     vendor: "",
     receipt_date: "",
@@ -111,11 +111,11 @@ export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, o
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Vendor */}
           <div>
-            <label htmlFor={`${fieldId}-vendor`} className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor={`${idPrefix}-vendor`} className="block text-sm font-medium text-gray-700 mb-1">
               Vendor
             </label>
             <input
-              id={`${fieldId}-vendor`}
+              id={`${idPrefix}-vendor`}
               type="text"
               value={formData.vendor}
               onChange={(e) => handleInputChange("vendor", e.target.value)}
@@ -126,11 +126,11 @@ export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, o
 
           {/* Date */}
           <div>
-            <label htmlFor={`${fieldId}-date`} className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor={`${idPrefix}-date`} className="block text-sm font-medium text-gray-700 mb-1">
               Date
             </label>
             <input
-              id={`${fieldId}-date`}
+              id={`${idPrefix}-date`}
               type="text"
               value={formData.receipt_date}
               onChange={(e) => handleInputChange("receipt_date", e.target.value)}
@@ -142,11 +142,11 @@ export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, o
           {/* Amount fields */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label htmlFor={`${fieldId}-subtotal`} className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`${idPrefix}-subtotal`} className="block text-sm font-medium text-gray-700 mb-1">
                 Subtotal
               </label>
               <input
-                id={`${fieldId}-subtotal`}
+                id={`${idPrefix}-subtotal`}
                 type="text"
                 value={formData.subtotal}
                 onChange={(e) => handleInputChange("subtotal", e.target.value)}
@@ -155,11 +155,11 @@ export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, o
               />
             </div>
             <div>
-              <label htmlFor={`${fieldId}-gst`} className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`${idPrefix}-gst`} className="block text-sm font-medium text-gray-700 mb-1">
                 GST
               </label>
               <input
-                id={`${fieldId}-gst`}
+                id={`${idPrefix}-gst`}
                 type="text"
                 value={formData.gst}
                 onChange={(e) => handleInputChange("gst", e.target.value)}
@@ -168,11 +168,11 @@ export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, o
               />
             </div>
             <div>
-              <label htmlFor={`${fieldId}-total`} className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`${idPrefix}-total`} className="block text-sm font-medium text-gray-700 mb-1">
                 Total
               </label>
               <input
-                id={`${fieldId}-total`}
+                id={`${idPrefix}-total`}
                 type="text"
                 value={formData.total}
                 onChange={(e) => handleInputChange("total", e.target.value)}
@@ -184,11 +184,11 @@ export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, o
 
           {/* Invoice Number */}
           <div>
-            <label htmlFor={`${fieldId}-invoice`} className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor={`${idPrefix}-invoice`} className="block text-sm font-medium text-gray-700 mb-1">
               Invoice #
             </label>
             <input
-              id={`${fieldId}-invoice`}
+              id={`${idPrefix}-invoice`}
               type="text"
               value={formData.invoice_number}
               onChange={(e) => handleInputChange("invoice_number", e.target.value)}
