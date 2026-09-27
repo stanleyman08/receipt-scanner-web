@@ -22,10 +22,10 @@ Every implementation or fix, whether it arrives as `mattpocock-skills:implement`
    - `frontend-design` for new UI or any visual change, `vercel-react-best-practices` for React code, and `vercel:nextjs` for anything in `app/` or `middleware.ts`.
    - `vercel:vercel-functions` for the route handlers in `app/api/`, which run as Vercel Functions.
    - `vercel:env-vars` for environment variable changes, and `vercel:deployments-cicd` for deploy or Git integration changes.
-   - `mattpocock-skills:tdd` for any behaviour change. There's no test runner yet, so ask before adding one, and say so when a change ships untested.
+   - `mattpocock-skills:tdd` for any behaviour change: write or extend the test first (`tests/` for code in `lib/`, a `*.test.tsx` file next to the component for UI).
    - `mattpocock-skills:diagnosing-bugs` for any fix: find the root cause before patching.
    - Any other installed skill that directly applies. Loading one costs little; missing one costs a review round.
-2. **Verify:** `npm run lint` and `npm run build` must pass (`next build` also type-checks). For UI changes, also check the page in a browser with `npm run dev`, at phone and desktop widths. Dev has no local stand-in or test account: it uses the Supabase project and AWS credentials in `.env.local`. Ask the user to sign in, and ask before saving, editing or deleting receipts or running a scan (each scan is a billed Textract call).
+2. **Verify:** `pnpm lint`, `pnpm typecheck`, `pnpm test` and `pnpm build` must pass. Lefthook runs Biome on every commit and the tests plus the type check on every push. For UI changes, also check the page in a browser with `pnpm dev`, at phone and desktop widths. Dev has no local stand-in or test account: it uses the Supabase project and AWS credentials in `.env.local`. Ask the user to sign in, and ask before saving, editing or deleting receipts or running a scan (each scan is a billed Textract call).
 3. **After the change passes, review the diff with:**
    - `mattpocock-skills:code-review` for standards and spec, and `code-review` for bugs.
    - `web-design-guidelines` when it touched UI.
