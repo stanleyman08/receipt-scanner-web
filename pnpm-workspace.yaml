@@ -1,5 +1,4 @@
-# Install scripts pnpm may run. Both ship prebuilt binaries as optional dependencies,
-# so their scripts (a binary check with a build-from-source fallback) are skipped.
+# Install scripts pnpm may run. sharp ships prebuilt binaries as optional dependencies,
+# so its script (a binary check with a build-from-source fallback) is skipped.
 allowBuilds:
   sharp: false
-  unrs-resolver: false
