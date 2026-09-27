@@ -5,9 +5,10 @@ import { describe, expect, it, vi } from "vitest";
 import AddBucketModal from "@/components/AddBucketModal";
 import type { Bucket } from "@/types/bucket";
 
-async function openModal(existingBuckets: Bucket[] = []) {
+// onAdd resolves to why adding failed, or null once the bucket is added.
+async function openModal(existingBuckets: Bucket[] = [], addFailure: string | null = null) {
   const user = userEvent.setup();
-  const onAdd = vi.fn();
+  const onAdd = vi.fn().mockResolvedValue(addFailure);
   render(<AddBucketModal isOpen existingBuckets={existingBuckets} onClose={vi.fn()} onAdd={onAdd} />);
   // The modal resets its fields and focuses the year one tick after opening.
   await waitFor(() => expect(screen.getByLabelText("Year")).toHaveFocus());
@@ -45,5 +46,13 @@ describe("AddBucketModal", () => {
 
     expect(screen.getByText("This bucket already exists")).toBeInTheDocument();
     expect(onAdd).not.toHaveBeenCalled();
+  });
+
+  it("shows why adding the bucket failed", async () => {
+    const { user } = await openModal([], "Your session has ended. Sign in again to continue.");
+
+    await submitBucketForm(user, "2025", "March", "Supply");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your session has ended. Sign in again to continue.");
   });
 });

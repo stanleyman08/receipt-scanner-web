@@ -8,7 +8,8 @@ interface AddBucketModalProps {
   isOpen: boolean;
   existingBuckets: Bucket[];
   onClose: () => void;
-  onAdd: (year: number, month: number, category: BucketCategory) => void;
+  /** Resolves to why adding failed, or null once the bucket is added. */
+  onAdd: (year: number, month: number, category: BucketCategory) => Promise<string | null>;
 }
 
 export default function AddBucketModal({ isOpen, existingBuckets, onClose, onAdd }: AddBucketModalProps) {
@@ -35,7 +36,7 @@ export default function AddBucketModal({ isOpen, existingBuckets, onClose, onAdd
     }
   }, [isOpen, currentYear, currentMonth]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -57,7 +58,8 @@ export default function AddBucketModal({ isOpen, existingBuckets, onClose, onAdd
       return;
     }
 
-    onAdd(yearNum, monthNum, category);
+    const failure = await onAdd(yearNum, monthNum, category);
+    if (failure) setError(failure);
   };
 
   if (!isOpen) return null;
@@ -139,7 +141,11 @@ export default function AddBucketModal({ isOpen, existingBuckets, onClose, onAdd
             </select>
           </div>
 
-          {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+          {error && (
+            <p role="alert" className="mb-4 text-sm text-red-600">
+              {error}
+            </p>
+          )}
 
           <div className="flex gap-3">
             <button

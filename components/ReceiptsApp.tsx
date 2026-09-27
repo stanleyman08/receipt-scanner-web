@@ -32,6 +32,7 @@ import type { Receipt, ScanResponse } from "@/types/receipt";
 const SUCCESS_MESSAGE_MS = 3000;
 const SCAN_FAILED = "The receipt couldn't be scanned. Check your connection and try again.";
 const SAVE_FAILED = "The receipt couldn't be saved. Check your connection and try again.";
+const ADD_BUCKET_FAILED = "The bucket couldn't be added. Check your connection and try again.";
 const UPDATE_FAILED = "The changes couldn't be saved. Check your connection and try again.";
 const DELETE_FAILED = "The receipt couldn't be deleted. Check your connection and try again.";
 
@@ -144,18 +145,21 @@ export default function ReceiptsApp({ initialBuckets, initialReceipts }: Receipt
     }
   }, [uniqueMonths, selectedMonth]);
 
-  const handleAddBucket = async (year: number, month: number, category: BucketCategory) => {
-    const result = await createBucketAction({ year, month, category });
-    if (!result.ok) {
-      setError(result.error);
-      return;
+  // Resolves to why adding failed, which the dialog shows, or null once the bucket is added.
+  const handleAddBucket = async (year: number, month: number, category: BucketCategory): Promise<string | null> => {
+    try {
+      const result = await createBucketAction({ year, month, category });
+      if (!result.ok) return result.error;
+      const bucket = result.value;
+      setBuckets((prev) => withBucket(prev, bucket.id, bucket, bucket.created_at));
+      setSelectedBucket(bucket);
+      setSelectedYear(bucket.year);
+      setSelectedMonth(bucket.month);
+      setIsAddBucketModalOpen(false);
+      return null;
+    } catch {
+      return ADD_BUCKET_FAILED;
     }
-    const bucket = result.value;
-    setBuckets((prev) => withBucket(prev, bucket.id, bucket, bucket.created_at));
-    setSelectedBucket(bucket);
-    setSelectedYear(bucket.year);
-    setSelectedMonth(bucket.month);
-    setIsAddBucketModalOpen(false);
   };
 
   // Process the receipt scan through stages (read only, no saving)
@@ -316,22 +320,21 @@ export default function ReceiptsApp({ initialBuckets, initialReceipts }: Receipt
     setEditingReceipt(receipt);
   };
 
-  const handleUpdateReceipt = async (id: string, review: ReceiptReview) => {
+  // Resolves to why saving failed, which the dialog shows, or null once the receipt is updated.
+  const handleUpdateReceipt = async (id: string, review: ReceiptReview): Promise<string | null> => {
     setIsSavingEdit(true);
     setError(null);
     try {
       const result = await updateReceiptAction(id, review.details, review.bucket);
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
+      if (!result.ok) return result.error;
       const updated = result.value;
       setReceipts((prev) => prev.map((r) => (r.id === id ? updated : r)));
       setBuckets((prev) => withBucket(prev, updated.bucket_id, review.bucket, updated.created_at));
       setEditingReceipt(null);
       showSuccess("Receipt updated.");
+      return null;
     } catch {
-      setError(UPDATE_FAILED);
+      return UPDATE_FAILED;
     } finally {
       setIsSavingEdit(false);
     }

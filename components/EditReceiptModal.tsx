@@ -19,7 +19,8 @@ interface EditReceiptModalProps {
   buckets: Bucket[];
   isSaving: boolean;
   onClose: () => void;
-  onSave: (id: string, review: ReceiptReview) => void;
+  /** Resolves to why saving failed, or null once the receipt is updated. */
+  onSave: (id: string, review: ReceiptReview) => Promise<string | null>;
 }
 
 // Rendered with key={receipt.id}, so the form starts from the receipt it was opened for.
@@ -38,8 +39,9 @@ export default function EditReceiptModal({
     pickedByHand: false,
   });
   const [amountError, setAmountError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     const reviewed = toReview();
     if (!reviewed) {
@@ -47,8 +49,12 @@ export default function EditReceiptModal({
       return;
     }
     setAmountError(null);
-    onSave(receipt.id, reviewed);
+    setSaveError(null);
+    const failure = await onSave(receipt.id, reviewed);
+    if (failure) setSaveError(failure);
   };
+
+  const message = amountError ?? saveError;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -179,9 +185,9 @@ export default function EditReceiptModal({
             />
           </div>
 
-          {amountError && (
+          {message && (
             <p role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-              {amountError}
+              {message}
             </p>
           )}
 
