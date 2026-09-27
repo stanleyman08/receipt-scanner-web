@@ -80,7 +80,7 @@ export default function Home() {
       setBuckets(bucketsData);
       setIsLoading(false);
       // Set default bucket and year after data loads
-      if (selectedBucket === null && bucketsData.length > 0) {
+      if (bucketsData.length > 0) {
         const defaultBucket = getDefaultBucket(bucketsData);
         if (defaultBucket) {
           setSelectedBucket(defaultBucket);
@@ -89,7 +89,6 @@ export default function Home() {
         }
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -397,6 +396,7 @@ export default function Home() {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={handleLogout}
                 className="self-start px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
               >
@@ -407,7 +407,7 @@ export default function Home() {
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
                 {error}
-                <button onClick={() => setError(null)} className="ml-2 text-red-500 hover:text-red-700">
+                <button type="button" onClick={() => setError(null)} className="ml-2 text-red-500 hover:text-red-700">
                   ×
                 </button>
               </div>
@@ -425,6 +425,7 @@ export default function Home() {
                   Buckets help you organize receipts by Year, Month, and Category.
                 </p>
                 <button
+                  type="button"
                   onClick={() => setIsAddBucketModalOpen(true)}
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700"
                 >

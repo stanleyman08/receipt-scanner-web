@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Receipt } from "@/types/receipt";
 
 interface EditReceiptModalProps {
@@ -12,6 +12,7 @@ interface EditReceiptModalProps {
 }
 
 export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, onSave }: EditReceiptModalProps) {
+  const fieldId = useId();
   const [formData, setFormData] = useState({
     vendor: "",
     receipt_date: "",
@@ -81,15 +82,26 @@ export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, o
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <button
+        type="button"
+        aria-label="Close"
+        tabIndex={-1}
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+      />
 
       {/* Modal */}
       <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Edit Receipt</h2>
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            className="p-1 text-gray-400 hover:text-gray-600 rounded"
+          >
+            <svg aria-hidden="true" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -99,8 +111,11 @@ export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, o
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Vendor */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Vendor</label>
+            <label htmlFor={`${fieldId}-vendor`} className="block text-sm font-medium text-gray-700 mb-1">
+              Vendor
+            </label>
             <input
+              id={`${fieldId}-vendor`}
               type="text"
               value={formData.vendor}
               onChange={(e) => handleInputChange("vendor", e.target.value)}
@@ -111,8 +126,11 @@ export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, o
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+            <label htmlFor={`${fieldId}-date`} className="block text-sm font-medium text-gray-700 mb-1">
+              Date
+            </label>
             <input
+              id={`${fieldId}-date`}
               type="text"
               value={formData.receipt_date}
               onChange={(e) => handleInputChange("receipt_date", e.target.value)}
@@ -124,8 +142,11 @@ export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, o
           {/* Amount fields */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Subtotal</label>
+              <label htmlFor={`${fieldId}-subtotal`} className="block text-sm font-medium text-gray-700 mb-1">
+                Subtotal
+              </label>
               <input
+                id={`${fieldId}-subtotal`}
                 type="text"
                 value={formData.subtotal}
                 onChange={(e) => handleInputChange("subtotal", e.target.value)}
@@ -134,8 +155,11 @@ export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, o
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">GST</label>
+              <label htmlFor={`${fieldId}-gst`} className="block text-sm font-medium text-gray-700 mb-1">
+                GST
+              </label>
               <input
+                id={`${fieldId}-gst`}
                 type="text"
                 value={formData.gst}
                 onChange={(e) => handleInputChange("gst", e.target.value)}
@@ -144,8 +168,11 @@ export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, o
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Total</label>
+              <label htmlFor={`${fieldId}-total`} className="block text-sm font-medium text-gray-700 mb-1">
+                Total
+              </label>
               <input
+                id={`${fieldId}-total`}
                 type="text"
                 value={formData.total}
                 onChange={(e) => handleInputChange("total", e.target.value)}
@@ -157,8 +184,11 @@ export default function EditReceiptModal({ receipt, isOpen, isSaving, onClose, o
 
           {/* Invoice Number */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Invoice #</label>
+            <label htmlFor={`${fieldId}-invoice`} className="block text-sm font-medium text-gray-700 mb-1">
+              Invoice #
+            </label>
             <input
+              id={`${fieldId}-invoice`}
               type="text"
               value={formData.invoice_number}
               onChange={(e) => handleInputChange("invoice_number", e.target.value)}

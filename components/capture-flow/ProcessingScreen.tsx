@@ -29,7 +29,7 @@ export default function ProcessingScreen({ imageData, stage, onCancel }: Process
     <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-4">
       {/* Dimmed image background */}
       <div className="absolute inset-0 flex items-center justify-center">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {/* biome-ignore lint/performance/noImgElement: a camera data URL, which next/image can't optimize */}
         <img src={imageData} alt="Processing receipt" className="max-h-full max-w-full object-contain opacity-40" />
       </div>
 
@@ -61,6 +61,7 @@ export default function ProcessingScreen({ imageData, stage, onCancel }: Process
         </ul>
 
         <button
+          type="button"
           onClick={onCancel}
           className="mt-6 w-full py-2 text-gray-500 hover:text-gray-700 text-sm transition-colors"
         >

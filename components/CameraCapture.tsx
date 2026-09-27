@@ -151,12 +151,14 @@ export default function CameraCapture({
         <div className="absolute bottom-0 left-0 right-0 pb-8 pt-4 bg-gradient-to-t from-black/70 to-transparent">
           <div className="flex justify-center gap-6">
             <button
+              type="button"
               onClick={onCloseCamera}
               className="bg-gray-600 text-white px-6 py-4 rounded-full font-medium shadow-lg hover:bg-gray-700 text-lg"
             >
               Close
             </button>
             <button
+              type="button"
               onClick={handleCapture}
               disabled={isLoading}
               className="bg-white text-gray-800 px-8 py-4 rounded-full font-medium shadow-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
@@ -182,11 +184,13 @@ export default function CameraCapture({
           )}
           <div className="flex md:flex-col gap-3 md:space-y-4 md:gap-0">
             <button
+              type="button"
               onClick={handleStartCamera}
               disabled={isLoading || disabled}
               className="flex-1 md:flex-none md:w-full bg-blue-600 text-white px-4 md:px-6 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <svg
+                aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5 md:hidden"
                 viewBox="0 0 20 20"
@@ -211,11 +215,13 @@ export default function CameraCapture({
               </div>
             </div>
             <button
+              type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading || disabled}
               className="flex-1 md:flex-none md:w-full bg-gray-200 text-gray-800 px-4 md:px-6 py-3 rounded-lg font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <svg
+                aria-hidden="true"
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5 md:hidden"
                 viewBox="0 0 20 20"

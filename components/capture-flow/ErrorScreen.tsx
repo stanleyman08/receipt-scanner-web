@@ -14,7 +14,13 @@ export default function ErrorScreen({ imageData, error, onRetake, onRetry }: Err
         {/* Error header */}
         <div className="flex flex-col items-center mb-6">
           <div className="w-16 h-16 rounded-full bg-amber-500 flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              aria-hidden="true"
+              className="w-8 h-8 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -29,7 +35,7 @@ export default function ErrorScreen({ imageData, error, onRetake, onRetry }: Err
 
         {/* Thumbnail with error overlay */}
         <div className="relative rounded-2xl overflow-hidden mb-6">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {/* biome-ignore lint/performance/noImgElement: a camera data URL, which next/image can't optimize */}
           <img src={imageData} alt="Failed receipt" className="w-full h-48 object-cover opacity-50" />
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="bg-black/60 px-4 py-2 rounded-full">
@@ -64,12 +70,14 @@ export default function ErrorScreen({ imageData, error, onRetake, onRetry }: Err
         {/* Actions */}
         <div className="flex gap-4">
           <button
+            type="button"
             onClick={onRetake}
             className="flex-1 px-6 py-4 rounded-full font-medium text-gray-300 border-2 border-gray-600 hover:bg-gray-800 transition-colors"
           >
             Retake Photo
           </button>
           <button
+            type="button"
             onClick={onRetry}
             className="flex-1 px-6 py-4 rounded-full font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
           >

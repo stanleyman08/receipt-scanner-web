@@ -5,7 +5,7 @@
  * OpenCV.js is loaded from CDN on first use to avoid bundling the large (~8MB) file
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: OpenCV.js loads from a CDN at runtime and ships no types
 let cv: any = null;
 let loadingPromise: Promise<void> | null = null;
 

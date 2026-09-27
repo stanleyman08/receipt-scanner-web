@@ -73,11 +73,12 @@ export default function ReceiptTable({
         cell: (info) => (
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => onEdit(info.row.original)}
               className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
               title="Edit"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -87,13 +88,20 @@ export default function ReceiptTable({
               </svg>
             </button>
             <button
+              type="button"
               onClick={() => onDelete(info.row.original.id)}
               disabled={deletingId === info.row.original.id}
               className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Delete"
             >
               {deletingId === info.row.original.id ? (
-                <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  aria-hidden="true"
+                  className="w-4 h-4 animate-spin"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -102,7 +110,7 @@ export default function ReceiptTable({
                   />
                 </svg>
               ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -119,7 +127,6 @@ export default function ReceiptTable({
     [onDelete, onEdit, deletingId],
   );
 
-  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: receipts,
     columns,

@@ -64,7 +64,13 @@ export default function AddBucketModal({ isOpen, existingBuckets, onClose, onAdd
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <button
+        type="button"
+        aria-label="Close"
+        tabIndex={-1}
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+      />
       <div className="relative bg-white rounded-lg shadow-xl w-full max-w-sm p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Add Bucket</h2>
         <form onSubmit={handleSubmit}>
@@ -104,7 +110,7 @@ export default function AddBucketModal({ isOpen, existingBuckets, onClose, onAdd
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {MONTH_NAMES.map((name, index) => (
-                <option key={index + 1} value={index + 1}>
+                <option key={name} value={index + 1}>
                   {name}
                 </option>
               ))}
