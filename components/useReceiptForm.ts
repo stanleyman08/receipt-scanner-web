@@ -21,11 +21,20 @@ export function useReceiptForm(initial: ReceiptReview) {
   });
   const [bucket, setBucket] = useState(initial.bucket);
   const [pickedByHand, setPickedByHand] = useState(initial.pickedByHand);
+  const { selected } = initial;
+
+  // Where the receipt date points, offered in the picker even after another bucket was picked by hand.
+  const suggested = suggestBucket({
+    receiptDate: fields.receiptDate || null,
+    selected,
+    current: bucket,
+    pickedByHand: false,
+  });
 
   const setField = (field: ReceiptFormField, value: string) => {
     setFields((prev) => ({ ...prev, [field]: value }));
     if (field === "receiptDate") {
-      setBucket((current) => suggestBucket({ receiptDate: value || null, current, pickedByHand }));
+      setBucket((current) => suggestBucket({ receiptDate: value || null, selected, current, pickedByHand }));
     }
   };
 
@@ -52,8 +61,9 @@ export function useReceiptForm(initial: ReceiptReview) {
       },
       bucket,
       pickedByHand,
+      selected,
     };
   };
 
-  return { fields, setField, bucket, pickBucket, toReview };
+  return { fields, setField, bucket, suggested, pickBucket, toReview };
 }

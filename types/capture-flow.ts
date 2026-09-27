@@ -8,6 +8,8 @@ export interface ReceiptReview {
   details: ReceiptDetails;
   bucket: BucketKey;
   pickedByHand: boolean;
+  /** The bucket selected for the scan (or the receipt's own bucket when editing), used when there's no receipt date. */
+  selected: BucketKey;
 }
 
 export type CaptureFlowState =
@@ -16,5 +18,5 @@ export type CaptureFlowState =
   | { status: "processing"; imageData: string; stage: ProcessingStage }
   | { status: "editing"; imageData: string; review: ReceiptReview; error?: string }
   | { status: "saving"; imageData: string; review: ReceiptReview }
-  | { status: "success"; imageData: string; receipt: Receipt }
+  | { status: "success"; imageData: string; receipt: Receipt; bucket: BucketKey }
   | { status: "error"; imageData: string; error: string };

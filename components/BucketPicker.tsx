@@ -6,6 +6,8 @@ import { type Bucket, type BucketKey, formatBucketLabel } from "@/types/bucket";
 interface BucketPickerProps {
   id: string;
   value: BucketKey;
+  /** The bucket the receipt date points to, offered even after another bucket was picked by hand. */
+  suggested: BucketKey;
   buckets: Bucket[];
   onChange: (bucket: BucketKey) => void;
   className?: string;
@@ -16,17 +18,20 @@ function optionValue(bucket: BucketKey): string {
   return `${bucket.year}-${bucket.month}-${bucket.category}`;
 }
 
-// The existing buckets, plus the chosen one when it doesn't exist yet: it's created when the receipt is saved.
-export default function BucketPicker({ id, value, buckets, onChange, className }: BucketPickerProps) {
-  const existing = sortBuckets(buckets);
-  const selectedValue = optionValue(value);
-  const isNew = !bucketExists(buckets, value.year, value.month, value.category);
-  const options: BucketKey[] = isNew ? [value, ...existing] : existing;
+// The existing buckets, plus the chosen and suggested ones when they don't exist yet: those are created when the
+// receipt is saved.
+export default function BucketPicker({ id, value, suggested, buckets, onChange, className }: BucketPickerProps) {
+  const isNew = (bucket: BucketKey) => !bucketExists(buckets, bucket.year, bucket.month, bucket.category);
+  const newBuckets = [value, suggested].filter(
+    (bucket, index, all) =>
+      isNew(bucket) && all.findIndex((other) => optionValue(other) === optionValue(bucket)) === index,
+  );
+  const options: BucketKey[] = [...newBuckets, ...sortBuckets(buckets)];
 
   return (
     <select
       id={id}
-      value={selectedValue}
+      value={optionValue(value)}
       onChange={(e) => {
         const picked = options.find((option) => optionValue(option) === e.target.value);
         if (picked) onChange({ year: picked.year, month: picked.month, category: picked.category });
@@ -36,7 +41,7 @@ export default function BucketPicker({ id, value, buckets, onChange, className }
       {options.map((option) => (
         <option key={optionValue(option)} value={optionValue(option)}>
           {formatBucketLabel(option)}
-          {isNew && optionValue(option) === selectedValue ? " (new)" : ""}
+          {isNew(option) ? " (new)" : ""}
         </option>
       ))}
     </select>

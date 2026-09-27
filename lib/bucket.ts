@@ -4,16 +4,27 @@ import type { Receipt } from "@/types/receipt";
 interface SuggestBucketInput {
   /** YYYY-MM-DD, or null when the receipt has no readable date. */
   receiptDate: string | null;
-  /** The bucket being scanned into, or the receipt's own bucket when editing. */
+  /** The bucket selected for the scan, or the receipt's own bucket when editing. */
+  selected: BucketKey;
+  /** The bucket the receipt is set to be filed in now. */
   current: BucketKey;
   pickedByHand: boolean;
 }
 
-// A receipt belongs in its receipt date's month, in the current category, unless a bucket was picked by hand.
-export function suggestBucket({ receiptDate, current, pickedByHand }: SuggestBucketInput): BucketKey {
-  if (pickedByHand || !receiptDate) return current;
+// A receipt belongs in its receipt date's month, in the selected bucket's category; without a date it goes back to
+// the selected bucket. A bucket picked by hand always stays.
+export function suggestBucket({ receiptDate, selected, current, pickedByHand }: SuggestBucketInput): BucketKey {
+  if (pickedByHand) return current;
+  if (!receiptDate) return selected;
   const [year, month] = receiptDate.split("-").map(Number);
-  return { year, month, category: current.category };
+  return { year, month, category: selected.category };
+}
+
+// A saved receipt filed away from its receipt date's month was put there by hand, so editing the date keeps it there.
+export function isFiledByHand(bucket: BucketKey, receiptDate: string | null): boolean {
+  if (!receiptDate) return false;
+  const [year, month] = receiptDate.split("-").map(Number);
+  return bucket.year !== year || bucket.month !== month;
 }
 
 // Filter receipts by bucket_id

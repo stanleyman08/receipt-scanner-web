@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import BucketPicker from "@/components/BucketPicker";
 import { useReceiptForm } from "@/components/useReceiptForm";
+import { isFiledByHand } from "@/lib/bucket";
 import type { Bucket, BucketKey } from "@/types/bucket";
 import type { ReceiptReview } from "@/types/capture-flow";
 import type { Receipt } from "@/types/receipt";
@@ -33,10 +34,12 @@ export default function EditReceiptModal({
   onSave,
 }: EditReceiptModalProps) {
   const idPrefix = useId();
-  const { fields, setField, bucket, pickBucket, toReview } = useReceiptForm({
+  const { fields, setField, bucket, suggested, pickBucket, toReview } = useReceiptForm({
     details: receipt,
     bucket: receiptBucket,
-    pickedByHand: false,
+    // A receipt filed away from its date's month keeps its bucket when the date is edited.
+    pickedByHand: isFiledByHand(receiptBucket, receipt.receipt_date),
+    selected: receiptBucket,
   });
   const [amountError, setAmountError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -179,6 +182,7 @@ export default function EditReceiptModal({
             <BucketPicker
               id={`${idPrefix}-bucket`}
               value={bucket}
+              suggested={suggested}
               buckets={buckets}
               onChange={pickBucket}
               className={INPUT_CLASS}
