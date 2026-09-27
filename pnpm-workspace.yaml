@@ -1,4 +1,8 @@
-# Install scripts pnpm may run. sharp ships prebuilt binaries as optional dependencies,
-# so its script (a binary check with a build-from-source fallback) is skipped.
+# Install scripts pnpm may run.
 allowBuilds:
+  # Lefthook's own postinstall is skipped: pnpm reuses cached builds, so it often doesn't run.
+  # The root "prepare" script installs the git hooks instead.
+  lefthook: false
+  # sharp ships prebuilt binaries as optional dependencies, so its script
+  # (a binary check with a build-from-source fallback) is skipped.
   sharp: false
