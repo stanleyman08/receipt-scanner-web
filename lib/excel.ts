@@ -1,8 +1,9 @@
 import ExcelJS from "exceljs";
 import { type Bucket, MONTH_NAMES } from "@/types/bucket";
+import type { Company } from "@/types/company";
 import { formatReceiptDate, type Receipt } from "@/types/receipt";
 
-const BUSINESS_NAME = "Carino";
+// Every workbook is one company's, and its titles and file name carry that company's name.
 
 const thinBorder: ExcelJS.Border = { style: "thin", color: { argb: "FF000000" } };
 const cellBorder: Partial<ExcelJS.Borders> = {
@@ -19,7 +20,7 @@ function dollars(cents: number | null): number | null {
 
 function buildSheet(ws: ExcelJS.Worksheet, receipts: Receipt[], bucket: Bucket): void {
   const monthName = MONTH_NAMES[bucket.month - 1];
-  const title = `${BUSINESS_NAME} ${monthName} ${bucket.year} - ${bucket.category}`;
+  const title = `${bucket.company} ${monthName} ${bucket.year} - ${bucket.category}`;
   const headers = ["Date", "Vendor", "Invoice #", "Subtotal", "GST", "Total"];
 
   // Row 1: Title (merged across all columns, bold)
@@ -112,7 +113,7 @@ function triggerDownload(buffer: ArrayBuffer, filename: string): void {
 export async function downloadBucketExcel(receipts: Receipt[], bucket: Bucket): Promise<void> {
   const monthName = MONTH_NAMES[bucket.month - 1];
   const sheetName = `${monthName} - ${bucket.category}`;
-  const filename = `${BUSINESS_NAME} ${monthName} ${bucket.year} - ${bucket.category}.xlsx`;
+  const filename = `${bucket.company} ${monthName} ${bucket.year} - ${bucket.category}.xlsx`;
 
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet(sheetName);
@@ -126,6 +127,7 @@ export async function downloadYearExcel(
   receipts: Receipt[],
   bucketMap: Map<string, Bucket>,
   year: number,
+  company: Company,
 ): Promise<void> {
   // Group receipts by bucket
   const receiptsByBucket = new Map<string, Receipt[]>();
@@ -165,7 +167,7 @@ export async function downloadYearExcel(
     ws.getCell("A1").value = "No receipts found";
   }
 
-  const filename = `${BUSINESS_NAME} ${year}.xlsx`;
+  const filename = `${company} ${year}.xlsx`;
   const buffer = await wb.xlsx.writeBuffer();
   triggerDownload(buffer as ArrayBuffer, filename);
 }

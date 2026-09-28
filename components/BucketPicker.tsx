@@ -1,6 +1,6 @@
 "use client";
 
-import { bucketExists, isSameBucket, sortBuckets } from "@/lib/bucket";
+import { filterBucketsByCompany, isSameBucket, sortBuckets, toBucketKey } from "@/lib/bucket";
 import { type Bucket, type BucketKey, formatBucketLabel } from "@/types/bucket";
 
 interface BucketPickerProps {
@@ -8,6 +8,7 @@ interface BucketPickerProps {
   value: BucketKey;
   /** The bucket the receipt date points to, offered even after another bucket was picked by hand. */
   suggested: BucketKey;
+  /** Both companies' buckets; only the chosen bucket's company's are offered. */
   buckets: Bucket[];
   onChange: (bucket: BucketKey) => void;
   className?: string;
@@ -18,12 +19,15 @@ function optionValue(bucket: BucketKey): string {
   return `${bucket.year}-${bucket.month}-${bucket.category}`;
 }
 
-// The existing buckets, plus the chosen and suggested ones when they don't exist yet. Whichever new bucket is chosen
-// is created when the receipt is saved.
+// The company's existing buckets, plus the chosen and suggested ones when they don't exist yet. Whichever new bucket
+// is chosen is created when the receipt is saved.
 export default function BucketPicker({ id, value, suggested, buckets, onChange, className }: BucketPickerProps) {
-  const isNew = (bucket: BucketKey) => !bucketExists(buckets, bucket.year, bucket.month, bucket.category);
+  const isNew = (bucket: BucketKey) => !buckets.some((existing) => isSameBucket(existing, bucket));
   const candidates = isSameBucket(value, suggested) ? [value] : [value, suggested];
-  const options: BucketKey[] = [...candidates.filter(isNew), ...sortBuckets(buckets)];
+  const options: BucketKey[] = [
+    ...candidates.filter(isNew),
+    ...sortBuckets(filterBucketsByCompany(buckets, value.company)),
+  ];
 
   return (
     <select
@@ -31,7 +35,7 @@ export default function BucketPicker({ id, value, suggested, buckets, onChange, 
       value={optionValue(value)}
       onChange={(e) => {
         const picked = options.find((option) => optionValue(option) === e.target.value);
-        if (picked) onChange({ year: picked.year, month: picked.month, category: picked.category });
+        if (picked) onChange(toBucketKey(picked));
       }}
       className={className}
     >

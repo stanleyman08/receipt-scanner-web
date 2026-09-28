@@ -1,13 +1,17 @@
+import type { Company } from "./company";
+
 export interface Bucket {
   id: string;
+  company: Company;
   year: number;
   month: number;
   category: BucketCategory;
   created_at: string;
 }
 
-/** What identifies a bucket: one category in one month. */
+/** What identifies a bucket: one category in one month, at one company. */
 export interface BucketKey {
+  company: Company;
   year: number;
   month: number;
   category: BucketCategory;
@@ -31,9 +35,15 @@ export const MONTH_NAMES = [
   "December",
 ] as const;
 
+/** "2026 / April / Food", for places that already show which company it is. */
 export function formatBucketLabel(bucket: BucketKey): string {
   const monthName = MONTH_NAMES[bucket.month - 1];
   return `${bucket.year} / ${monthName} / ${bucket.category}`;
+}
+
+/** "Peko Peko · 2026 / April / Food", for places that must say which company. */
+export function formatBucketWithCompany(bucket: BucketKey): string {
+  return `${bucket.company} · ${formatBucketLabel(bucket)}`;
 }
 
 export function compareBuckets(a: Bucket, b: Bucket): number {

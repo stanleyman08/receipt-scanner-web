@@ -20,7 +20,7 @@ Every implementation or fix, whether it arrives as `mattpocock-skills:implement`
 
 1. **Before writing code, load the skills the change touches:**
    - `frontend-design` for new UI or any visual change, `vercel-react-best-practices` for React code, and `vercel:nextjs` for anything in `app/` or `proxy.ts`.
-   - `neon-postgres` for anything in `lib/db/`, `lib/receipt-store.ts` or `scripts/`, or the tables. The Neon skills are pinned in `skills-lock.json` but not committed (`.agents/` is gitignored), so install them from `neondatabase/agent-skills` if `.agents/skills/` is missing. After upgrading Better Auth, regenerate its tables in `lib/db/schema.ts` as the comment there says.
+   - `neon-postgres` for anything in `lib/db/`, `lib/receipt-store.ts` or `scripts/`, or the tables. The Neon skills are pinned in `skills-lock.json` but not committed (`.agents/` is gitignored), so install them from `neondatabase/agent-skills` if `.agents/skills/` is missing. To change a table that already exists, or after upgrading Better Auth, follow the comment at the top of `lib/db/schema.ts`: the CREATE statements only reach new databases, so existing ones need a statement in `SCHEMA_CHANGES`. Apply it to the `dev` branch first with the README's dev-branch `setup-db` command: plain `pnpm setup-db` uses `.env.local`, which is the main (production) database. Run `pnpm setup-db` on main only as the change ships, and ask before doing so, since the code already deployed may stop working once it runs.
    - `vercel:vercel-functions` for the route handlers in `app/api/`, which run as Vercel Functions.
    - `vercel:env-vars` for environment variable changes, and `vercel:deployments-cicd` for deploy or Git integration changes.
    - `mattpocock-skills:tdd` for any behaviour change: write or extend the test first (`tests/` for code in `lib/`, a `*.test.tsx` file next to the component for UI).
@@ -40,7 +40,7 @@ Every implementation or fix, whether it arrives as `mattpocock-skills:implement`
 
 The GitHub repo is connected to Vercel, so **every push to `main` deploys to production**. Only push when the checks pass and the reviews above are done. After changing an environment variable, redeploy for it to take effect.
 
-Preview deployments get their own Neon database branches, copied from `main`. After a PR merges, delete its database branch in the Neon console (`vercel integration open neon receipt-scanner-db`): the free plan allows 10 branches.
+Preview deployments get their own Neon database branches, copied from `main`. A PR that changes the tables needs `setup-db` run on its preview branch too, or the preview fails until it is. After a PR merges, delete its database branch in the Neon console (`vercel integration open neon receipt-scanner-db`): the free plan allows 10 branches.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

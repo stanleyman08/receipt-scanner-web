@@ -1,14 +1,15 @@
 # Receipt Scanner
 
-A web application for scanning receipts using your phone's camera. It reads each receipt with AWS Textract, files it into a bucket (one category for one month), and exports a bucket or a whole year to Excel. Built with Next.js 16, React 19, Neon Postgres and Better Auth.
+A web application for scanning receipts using your phone's camera. It reads each receipt with AWS Textract, files it into a bucket (one category for one month of one company), and exports a bucket or a whole year to Excel. Built with Next.js 16, React 19, Neon Postgres and Better Auth.
 
 ## Features
 
+- Two companies, Carino and Peko Peko, each with its own buckets, receipts and exports, and a switcher at the top
 - Scan receipts using your device's camera, or upload a photo
 - Automatic data extraction (vendor, date, subtotal, GST, total, invoice number)
-- Receipts filed into the bucket for their date, with a picker to choose another
-- One shared account for everyone at the business, with sign-in attempts rate-limited
-- Export a bucket, or a whole year, to Excel
+- Receipts filed into the bucket for their date, with pickers to choose another bucket or the other company
+- One shared account for everyone at both companies, with sign-in attempts rate-limited
+- Export a bucket, or a company's whole year, to Excel
 - Responsive design for mobile and desktop
 
 ## Prerequisites
@@ -41,11 +42,13 @@ vercel env pull .env.local --yes
 
 ### 3. Database tables
 
-Create the tables. It's safe to re-run.
+Create the tables, or bring existing ones up to date after a schema change. It's safe to re-run.
 
 ```bash
 pnpm setup-db
 ```
+
+It uses `.env.local`, so it sets up the main database. To set up the `dev` branch from step 5, run it with that branch's settings: `node --env-file=.env.local --env-file=.env.development.local scripts/setup-db.mts`.
 
 ### 4. The shared account
 

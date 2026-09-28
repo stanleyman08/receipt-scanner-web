@@ -1,7 +1,8 @@
-// Creates Better Auth's tables and the app's tables where they don't exist yet; safe to re-run.
+// Creates Better Auth's tables and the app's tables where they don't exist yet, then applies the schema changes that
+// bring older tables up to date (see lib/db/schema.ts); safe to re-run.
 // Schema changes need the direct connection, not the pooled one. Run with `pnpm setup-db`.
 import { neon } from "@neondatabase/serverless";
-import { APP_SCHEMA, AUTH_SCHEMA } from "../lib/db/schema.ts";
+import { SETUP_STATEMENTS } from "../lib/db/schema.ts";
 
 const url = process.env.DATABASE_URL_UNPOOLED;
 if (!url) {
@@ -10,10 +11,8 @@ if (!url) {
 }
 
 const sql = neon(url);
-const statements = [...AUTH_SCHEMA, ...APP_SCHEMA];
 
 console.log(`Setting up ${new URL(url).host}`);
-for (const statement of statements) {
-  await sql.query(statement);
-}
-console.log(`Schema is up to date (${statements.length} statements).`);
+// One transaction, so a run that fails partway changes nothing rather than leaving a table half changed.
+await sql.transaction(SETUP_STATEMENTS.map((statement) => sql.query(statement)));
+console.log(`Ran ${SETUP_STATEMENTS.length} statements: missing tables created, schema changes applied.`);

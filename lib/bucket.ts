@@ -1,4 +1,5 @@
 import { type Bucket, type BucketKey, compareBuckets } from "@/types/bucket";
+import type { Company } from "@/types/company";
 import type { Receipt } from "@/types/receipt";
 
 interface SuggestBucketInput {
@@ -10,11 +11,12 @@ interface SuggestBucketInput {
   handPicked: BucketKey | null;
 }
 
-// Where a receipt date points: that month, in the selected bucket's category. Without a date, the selected bucket.
+// Where a receipt date points: that month, at the selected bucket's company and in its category. Without a date, the
+// selected bucket.
 export function bucketForDate(receiptDate: string | null, selected: BucketKey): BucketKey {
   if (!receiptDate) return selected;
   const [year, month] = receiptDate.split("-").map(Number);
-  return { year, month, category: selected.category };
+  return { company: selected.company, year, month, category: selected.category };
 }
 
 // A receipt follows its receipt date, unless a bucket was picked by hand: that always wins.
@@ -33,7 +35,26 @@ export function isFiledByHand(bucket: BucketKey, receiptDate: string | null): bo
 }
 
 export function isSameBucket(a: BucketKey, b: BucketKey): boolean {
-  return a.year === b.year && a.month === b.month && a.category === b.category;
+  return a.company === b.company && a.year === b.year && a.month === b.month && a.category === b.category;
+}
+
+// Moving a receipt to the other company keeps its month and category.
+export function bucketAtCompany(bucket: BucketKey, company: Company): BucketKey {
+  return { ...toBucketKey(bucket), company };
+}
+
+export function toBucketKey({ company, year, month, category }: BucketKey): BucketKey {
+  return { company, year, month, category };
+}
+
+export function filterBucketsByCompany(buckets: Bucket[], company: Company): Bucket[] {
+  return buckets.filter((bucket) => bucket.company === company);
+}
+
+// Adds the bucket a receipt was just filed into, if saving it created that bucket. The id is always the server's.
+export function withBucket(buckets: Bucket[], id: string, key: BucketKey, createdAt: string): Bucket[] {
+  if (buckets.some((bucket) => bucket.id === id)) return buckets;
+  return [...buckets, { ...toBucketKey(key), id, created_at: createdAt }];
 }
 
 // Filter receipts by bucket_id

@@ -35,6 +35,7 @@ describe("AddBucketModal", () => {
   it("refuses a bucket that already exists", async () => {
     const march2025Supply: Bucket = {
       id: "2025-03-supply",
+      company: "Carino",
       year: 2025,
       month: 3,
       category: "Supply",
