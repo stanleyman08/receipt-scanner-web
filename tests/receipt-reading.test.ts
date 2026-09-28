@@ -179,6 +179,48 @@ describe("readReceipt", () => {
       expect(fields.invoice_number).toBe("550123");
     });
 
+    it("finds the six-digit ID in the lines Textract read when it isn't among the labelled fields", () => {
+      const document: ExpenseDocument = {
+        SummaryFields: [field("INVOICE_RECEIPT_ID", "123000", "RCPT"), field("OTHER", "001234567", "REF#")],
+        Blocks: ["RCPT 123000", "AUTH # 550123", "REF# 001234567"].map((text) => ({ BlockType: "LINE", Text: text })),
+      };
+      expect(readReceipt(document).invoice_number).toBe("550123");
+    });
+
+    it("takes an ID's label written in full", () => {
+      const fields = readReceipt(
+        receipt(field("OTHER", "660000", "REF#"), field("OTHER", "550123", "AUTHORIZATION #")),
+      );
+      expect(fields.invoice_number).toBe("550123");
+    });
+
+    it("doesn't cut a longer printed number down to six digits", () => {
+      const document: ExpenseDocument = {
+        SummaryFields: [field("INVOICE_RECEIPT_ID", "A-1042")],
+        Blocks: [{ BlockType: "LINE", Text: "Invoice: 123456-01" }],
+      };
+      expect(readReceipt(document).invoice_number).toBe("A-1042");
+    });
+
+    it("keeps a supplier's labelled invoice number over a reference printed elsewhere", () => {
+      const document: ExpenseDocument = {
+        SummaryFields: [field("INVOICE_RECEIPT_ID", "A-1042", "Invoice #")],
+        Blocks: [{ BlockType: "LINE", Text: "Customer Ref 123456" }],
+      };
+      expect(readReceipt(document).invoice_number).toBe("A-1042");
+    });
+
+    it("only takes an ID's label as a whole word", () => {
+      const fields = readReceipt(
+        receipt(
+          field("OTHER", "660000", "PREFERRED"),
+          field("OTHER", "770000", "REFUND"),
+          field("INVOICE_RECEIPT_ID", "A-1042"),
+        ),
+      );
+      expect(fields.invoice_number).toBe("A-1042");
+    });
+
     it("prefers an approval number to a reference number, both of six digits", () => {
       const fields = readReceipt(receipt(field("OTHER", "660000", "REF#"), field("OTHER", "550123", "AUTH #")));
       expect(fields.invoice_number).toBe("550123");
