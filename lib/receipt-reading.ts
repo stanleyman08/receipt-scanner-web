@@ -6,6 +6,10 @@ const VENDOR_TYPES = ["VENDOR_NAME", "VENDOR", "NAME"];
 const DATE_TYPES = ["INVOICE_RECEIPT_DATE", "DATE", "TRANSACTION_DATE"];
 const INVOICE_TYPES = ["INVOICE_RECEIPT_ID", "INVOICE_NUMBER", "RECEIPT_ID"];
 const INVOICE_LABELS = ["Invoice Number", "Ref. #", "Ref #", "Reference"];
+// The invoice number is a unique ID for finding the paper receipt again, usually six digits: a supplier's invoice
+// number, or else the card slip's approval, authorization or reference number, in that order.
+const SIX_DIGIT_ID_LABELS = ["INVOICE", "APPROVAL", "AUTH", "REF"];
+const SIX_DIGITS = /^\d{6}$/;
 const SUBTOTAL_TYPES = ["SUBTOTAL", "SUB_TOTAL"];
 const GST_TYPES = ["TAX"];
 const GST_LABELS = ["GST", "TAX"];
@@ -17,14 +21,15 @@ const TOTAL_TYPES = ["TOTAL", "AMOUNT_DUE", "GRAND_TOTAL"];
 interface VendorRule {
   /** Matches the vendor's name as Textract reads it. */
   vendor: RegExp;
-  /** Labels of the number kept as the invoice number, a unique ID for matching the receipt; tried first. */
-  invoiceLabels: string[];
   /** Whether its all-number dates are printed month first, as 07/20/26 is 20 July 2026. */
   isMonthFirst: boolean;
 }
 
-// Vendors whose receipts come in often. Superstore's card "Ref. #" and a supplier's "Invoice #" already read right.
-const VENDOR_RULES: VendorRule[] = [{ vendor: /walmart/i, invoiceLabels: ["APPROVAL #"], isMonthFirst: true }];
+// Vendors whose receipts come in often and print all-number dates in an order the general rules can't tell apart.
+const VENDOR_RULES: VendorRule[] = [
+  { vendor: /walmart/i, isMonthFirst: true },
+  { vendor: /safeway/i, isMonthFirst: true },
+];
 
 /**
  * The details a scan pre-fills from Textract's AnalyzeExpense result. Anything the receipt doesn't show, or that
@@ -50,10 +55,7 @@ export function readReceipt(document: ExpenseDocument, scannedOn: Date = new Dat
   return {
     vendor,
     receipt_date: parseReceiptDate(valueOfType(fields, DATE_TYPES), scannedOn, rule?.isMonthFirst ?? false),
-    invoice_number:
-      valueOfLabel(fields, rule?.invoiceLabels ?? []) ??
-      valueOfLabel(fields, INVOICE_LABELS) ??
-      valueOfType(fields, INVOICE_TYPES),
+    invoice_number: sixDigitId(fields) ?? valueOfLabel(fields, INVOICE_LABELS) ?? valueOfType(fields, INVOICE_TYPES),
     subtotal_cents: isOnlyLineItems ? totalCents : subtotalCents,
     gst_cents: isOnlyLineItems ? 0 : gstCents,
     total_cents: totalCents,
@@ -78,6 +80,17 @@ function lineItemsCents(document: ExpenseDocument): number | null {
   const amounts = items.map((item) => parseAmountCents(valueOfType(item.LineItemExpenseFields ?? [], ["PRICE"])));
   if (amounts.length === 0 || amounts.includes(null)) return null;
   return amounts.reduce<number>((sum, cents) => sum + (cents ?? 0), 0);
+}
+
+/** The first six-digit number whose label names an ID, in the order of SIX_DIGIT_ID_LABELS. */
+function sixDigitId(fields: ExpenseField[]): string | null {
+  for (const label of SIX_DIGIT_ID_LABELS) {
+    const match = fields.find(
+      (f) => f.LabelDetection?.Text?.toUpperCase().includes(label) && SIX_DIGITS.test(cleanValue(f) ?? ""),
+    );
+    if (match) return cleanValue(match);
+  }
+  return null;
 }
 
 /** The first field matching the given types, in priority order. */

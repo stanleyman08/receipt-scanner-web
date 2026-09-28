@@ -156,20 +156,37 @@ describe("readReceipt", () => {
     expect(fields.invoice_number).toBe("550123");
   });
 
-  describe("vendor rules", () => {
-    const SCANNED_ON = new Date("2026-09-27T12:00:00Z");
-
-    it("takes a Walmart receipt's card approval number as its invoice number", () => {
+  describe("invoice number", () => {
+    // The invoice number is a unique ID for finding the paper receipt again: usually a six-digit number with an ID's
+    // label. Other numbers of six digits, like a cashier's or a card slip's receipt number, don't count.
+    it.each([
+      ["an invoice number", "Invoice #", [field("OTHER", "009051", "OP#")]],
+      [
+        "a card approval number",
+        "APPROVAL #",
+        [field("INVOICE_RECEIPT_ID", "01234", "TR#"), field("OTHER", "009051", "OP#")],
+      ],
+      [
+        "a card authorization number",
+        "AUTH #",
+        [field("INVOICE_RECEIPT_ID", "123", "Tran"), field("OTHER", "123000", "RCPT")],
+      ],
+      ["a card reference number", "Ref. #:", [field("OTHER", "A1234E", "Auth #:")]],
+    ])("takes %s of six digits over other numbers", (_case, label, others) => {
       const fields = readReceipt(
-        receipt(
-          field("VENDOR_NAME", "Walmart"),
-          field("INVOICE_RECEIPT_ID", "01234", "TR#"),
-          field("OTHER", "550123", "APPROVAL #"),
-          field("OTHER", "620000000001", "RRN #"),
-        ),
+        receipt(field("VENDOR_NAME", "Corner Grocery"), ...others, field("OTHER", "550123", label)),
       );
       expect(fields.invoice_number).toBe("550123");
     });
+
+    it("prefers an approval number to a reference number, both of six digits", () => {
+      const fields = readReceipt(receipt(field("OTHER", "660000", "REF#"), field("OTHER", "550123", "AUTH #")));
+      expect(fields.invoice_number).toBe("550123");
+    });
+  });
+
+  describe("vendor rules", () => {
+    const SCANNED_ON = new Date("2026-09-27T12:00:00Z");
 
     it.each([
       ["07/20/26", "2026-07-20"],
@@ -182,6 +199,14 @@ describe("readReceipt", () => {
         SCANNED_ON,
       );
       expect(fields.receipt_date).toBe(date);
+    });
+
+    it("reads a Safeway date month first", () => {
+      const fields = readReceipt(
+        receipt(field("VENDOR_NAME", "Safeway Seafair"), field("INVOICE_RECEIPT_DATE", "07/05/2026")),
+        SCANNED_ON,
+      );
+      expect(fields.receipt_date).toBe("2026-07-05");
     });
 
     it("still leaves another vendor's month-first date blank", () => {
