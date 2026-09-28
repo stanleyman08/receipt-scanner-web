@@ -72,19 +72,23 @@ const DAY_THEN_MONTH_NAME = /^(\d{1,2})[\s-]+([a-z]{3,})\.?,?[\s-]+(\d{4}|\d{2})
 const LEADING_WEEKDAY = /^(mon|tue|wed|thu|fri|sat|sun)[a-z]*\.?,?\s+/i;
 const TRAILING_TIME = /,?\s+\d{1,2}:\d{2}(:\d{2})?(\s*[ap]\.?m\.?)?$/i;
 
-// Numeric dates in any other order (28/03/2026, 03/28/2026) are ambiguous, so they stay blank.
+// Numeric dates in any other order (28/03/2026, 03/28/2026) are ambiguous, so they stay blank. So does a date after
+// the scan, which can only be a misread.
 function parseReceiptDate(value: string | null, scannedOn: Date): string | null {
   if (!value) return null;
-  const text = value.trim().replace(LEADING_WEEKDAY, "").replace(TRAILING_TIME, "");
+  const date = readDate(value.trim().replace(LEADING_WEEKDAY, "").replace(TRAILING_TIME, ""), scannedOn);
+  return date !== null && date <= scanDate(scannedOn) ? date : null;
+}
 
+function readDate(text: string, scannedOn: Date): string | null {
   const yearFirst = YEAR_FIRST.exec(text);
   if (yearFirst) {
     const [, year, month, day] = yearFirst;
-    const receiptYear = fullYear(year);
-    // A two-digit year first could also be a day (27/09/26 is 27 September 2026 on some receipts), so it is only
-    // trusted when it's this year or last year.
-    if (year.length === 2 && !isRecentYear(receiptYear, scannedOn)) return null;
-    return toIsoDate(receiptYear, Number(month), Number(day));
+    if (year.length === 4) return toIsoDate(Number(year), Number(month), Number(day));
+    // A two-digit year first could also be a day: 25/09/26 reads as 26 September 2025 or 25 September 2026. It's
+    // read only when it's this year or last year and the date doesn't read just as well day first.
+    const dayFirst = day.length === 2 ? recentDate(day, month, year, scannedOn) : null;
+    return dayFirst === null ? recentDate(year, month, day, scannedOn) : null;
   }
   const monthNameThenDay = MONTH_NAME_THEN_DAY.exec(text);
   if (monthNameThenDay) {
@@ -103,9 +107,21 @@ function fullYear(year: string): number {
   return year.length === 2 ? CENTURY + Number(year) : Number(year);
 }
 
+// A date with a two-digit year that exists, falls in the scan's year or the year before, and isn't after the scan.
+function recentDate(year: string, month: string, day: string, scannedOn: Date): string | null {
+  const yearNumber = fullYear(year);
+  const date = toIsoDate(yearNumber, Number(month), Number(day));
+  return date !== null && isRecentYear(yearNumber, scannedOn) && date <= scanDate(scannedOn) ? date : null;
+}
+
 function isRecentYear(year: number, scannedOn: Date): boolean {
   const scanYear = scannedOn.getFullYear();
   return year === scanYear || year === scanYear - 1;
+}
+
+// The day of the scan as YYYY-MM-DD, in UTC, which runs ahead of Canadian time.
+function scanDate(scannedOn: Date): string {
+  return scannedOn.toISOString().slice(0, 10);
 }
 
 /** 1–12 for a month name or abbreviation, 0 for anything else. */

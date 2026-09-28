@@ -59,6 +59,7 @@ describe("readReceipt", () => {
 
   it.each([
     ["2026-03-28", "2026-03-28"],
+    ["2024-11-05", "2024-11-05"],
     ["2026/03/28", "2026-03-28"],
     ["2026.03.28", "2026-03-28"],
     ["2026-3-8", "2026-03-08"],
@@ -84,6 +85,10 @@ describe("readReceipt", () => {
     ["03/28/2026", "month first"],
     ["27/09/26", "a two-digit year that would be next year"],
     ["15/04/26", "a two-digit year from years ago"],
+    ["25/09/26", "a two-digit date that could just as well be day first"],
+    ["25/09/26 14:32", "the same with a time"],
+    ["2026-12-01", "a date after the scan"],
+    ["28-Mar-35", "a two-digit year far in the future"],
     ["2026-02-30", "a day that doesn't exist"],
     ["2026-13-01", "a month that doesn't exist"],
     ["next Tuesday", "words"],
@@ -115,5 +120,9 @@ describe("readReceipt", () => {
 
   it("leaves an unreadable amount blank", () => {
     expect(readReceipt(receipt(field("TOTAL", "see attached"))).total_cents).toBeNull();
+  });
+
+  it("leaves an amount too large to store blank, such as a registration number read as the total", () => {
+    expect(readReceipt(receipt(field("TOTAL", "812345678.00"))).total_cents).toBeNull();
   });
 });
