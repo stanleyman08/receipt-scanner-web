@@ -20,7 +20,7 @@ Every implementation or fix, whether it arrives as `mattpocock-skills:implement`
 
 1. **Before writing code, load the skills the change touches:**
    - `frontend-design` for new UI or any visual change, `vercel-react-best-practices` for React code, and `vercel:nextjs` for anything in `app/` or `proxy.ts`.
-   - `neon-postgres` for anything in `lib/db/`, `lib/receipt-store.ts` or `scripts/`, or the tables. The Neon skills are pinned in `skills-lock.json` but not committed (`.agents/` is gitignored), so install them from `neondatabase/agent-skills` if `.agents/skills/` is missing. After upgrading Better Auth, regenerate its tables in `lib/db/schema.ts` as the comment there says.
+   - `neon-postgres` for anything in `lib/db/`, `lib/receipt-store.ts` or `scripts/`, or the tables. The Neon skills are pinned in `skills-lock.json` but not committed (`.agents/` is gitignored), so install them from `neondatabase/agent-skills` if `.agents/skills/` is missing. To change a table that already exists, or after upgrading Better Auth, follow the comment at the top of `lib/db/schema.ts`: the CREATE statements only reach new databases, so existing ones need a statement in `SCHEMA_CHANGES`. Run `pnpm setup-db` on the `dev` branch first, then on the main branch when the change ships.
    - `vercel:vercel-functions` for the route handlers in `app/api/`, which run as Vercel Functions.
    - `vercel:env-vars` for environment variable changes, and `vercel:deployments-cicd` for deploy or Git integration changes.
    - `mattpocock-skills:tdd` for any behaviour change: write or extend the test first (`tests/` for code in `lib/`, a `*.test.tsx` file next to the component for UI).
