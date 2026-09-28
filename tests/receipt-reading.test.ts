@@ -118,6 +118,13 @@ describe("readReceipt", () => {
     expect(fields.invoice_number).toBe("INV-77");
   });
 
+  it("skips a labelled invoice number with no digits, such as a cancelled card payment's reference", () => {
+    const fields = readReceipt(
+      receipt(field("OTHER", "TRANSACTION NOT COMPLETED", "Ref. #:"), field("OTHER", "550123", "Ref. #:")),
+    );
+    expect(fields.invoice_number).toBe("550123");
+  });
+
   it("leaves an unreadable amount blank", () => {
     expect(readReceipt(receipt(field("TOTAL", "see attached"))).total_cents).toBeNull();
   });
