@@ -9,7 +9,7 @@ interface CompanyPickerProps {
   className?: string;
 }
 
-// Which company's books a receipt goes into, on the review screen and in the edit dialog.
+// Which company's books a receipt goes into, in the edit dialog.
 export default function CompanyPicker({ id, value, onChange, className }: CompanyPickerProps) {
   return (
     <select

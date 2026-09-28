@@ -2,10 +2,10 @@
 
 import { useId, useState } from "react";
 import BucketPicker from "@/components/BucketPicker";
-import CompanyPicker from "@/components/CompanyPicker";
 import { useReceiptForm } from "@/components/useReceiptForm";
 import type { Bucket } from "@/types/bucket";
 import type { ReceiptReview } from "@/types/capture-flow";
+import { COMPANIES } from "@/types/company";
 
 const AMOUNT_ERROR = "Enter amounts as plain numbers, like 12.50.";
 const LABEL_CLASS = "block text-xs text-gray-500 uppercase tracking-wide mb-1";
@@ -42,62 +42,26 @@ export default function EditScreen({ imageData, review, buckets, error, onConfir
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4 animate-fade-in">
-        <div className="w-full max-w-md max-h-[90vh] overflow-y-auto">
-          {/* Header */}
-          <div className="flex flex-col items-center mb-6">
-            <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center mb-3">
-              <svg
-                aria-hidden="true"
-                className="w-6 h-6 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                />
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold text-white">Review Receipt</h2>
-            <p className="text-sm text-gray-400 mt-1">Edit any fields before saving</p>
-          </div>
-
-          {/* Form card */}
-          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-            {/* Thumbnail - clickable to view full image */}
+      {/* The fixed box is the visible screen, so the actions stay on it while the fields scroll */}
+      <div className="fixed inset-0 z-50 bg-black/95 animate-fade-in">
+        <div className="mx-auto flex h-full w-full max-w-md flex-col sm:justify-center">
+          {/* Header - the thumbnail opens the full image */}
+          <div className="flex shrink-0 items-center justify-between gap-4 px-4 py-1">
+            <h2 className="text-lg font-semibold text-white">Review Receipt</h2>
             <button
               type="button"
+              aria-label="View full image"
               onClick={() => setShowFullImage(true)}
-              className="w-full flex items-center gap-4 p-4 bg-gray-50 border-b border-gray-100 hover:bg-gray-100 transition-colors text-left"
+              className="shrink-0 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               {/* biome-ignore lint/performance/noImgElement: a camera data URL, which next/image can't optimize */}
-              <img src={imageData} alt="Receipt thumbnail" className="w-16 h-20 object-cover rounded-lg shadow" />
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-gray-900 truncate">{fields.vendor || "Unknown Vendor"}</p>
-                <p className="text-sm text-blue-500">Tap to view full image</p>
-              </div>
-              <svg
-                aria-hidden="true"
-                className="w-5 h-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-                />
-              </svg>
+              <img src={imageData} alt="" className="h-12 w-10 rounded-md object-cover" />
             </button>
+          </div>
 
-            {/* Editable fields */}
-            <div className="p-4 space-y-4">
+          {/* Editable fields */}
+          <div className="min-h-0 overflow-y-auto overscroll-contain rounded-2xl bg-white p-4">
+            <div className="space-y-3">
               <div>
                 <label htmlFor={`${idPrefix}-vendor`} className={LABEL_CLASS}>
                   Vendor
@@ -108,21 +72,34 @@ export default function EditScreen({ imageData, review, buckets, error, onConfir
                   value={fields.vendor}
                   onChange={(e) => setField("vendor", e.target.value)}
                   className={INPUT_CLASS}
-                  placeholder="Enter vendor name"
                 />
               </div>
 
-              <div>
-                <label htmlFor={`${idPrefix}-date`} className={LABEL_CLASS}>
-                  Date
-                </label>
-                <input
-                  id={`${idPrefix}-date`}
-                  type="date"
-                  value={fields.receiptDate}
-                  onChange={(e) => setField("receiptDate", e.target.value)}
-                  className={INPUT_CLASS}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor={`${idPrefix}-date`} className={LABEL_CLASS}>
+                    Date
+                  </label>
+                  <input
+                    id={`${idPrefix}-date`}
+                    type="date"
+                    value={fields.receiptDate}
+                    onChange={(e) => setField("receiptDate", e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`${idPrefix}-invoice`} className={LABEL_CLASS}>
+                    Invoice #
+                  </label>
+                  <input
+                    id={`${idPrefix}-invoice`}
+                    type="text"
+                    value={fields.invoiceNumber}
+                    onChange={(e) => setField("invoiceNumber", e.target.value)}
+                    className={INPUT_CLASS}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
@@ -170,31 +147,27 @@ export default function EditScreen({ imageData, review, buckets, error, onConfir
                 </div>
               </div>
 
-              <div>
-                <label htmlFor={`${idPrefix}-invoice`} className={LABEL_CLASS}>
-                  Invoice #
-                </label>
-                <input
-                  id={`${idPrefix}-invoice`}
-                  type="text"
-                  value={fields.invoiceNumber}
-                  onChange={(e) => setField("invoiceNumber", e.target.value)}
-                  className={INPUT_CLASS}
-                  placeholder="Enter invoice number"
-                />
-              </div>
-
-              <div>
-                <label htmlFor={`${idPrefix}-company`} className={LABEL_CLASS}>
-                  Company
-                </label>
-                <CompanyPicker
-                  id={`${idPrefix}-company`}
-                  value={company}
-                  onChange={pickCompany}
-                  className={INPUT_CLASS}
-                />
-              </div>
+              <fieldset>
+                <legend className={LABEL_CLASS}>Company</legend>
+                <div className="grid grid-cols-2 gap-2">
+                  {COMPANIES.map((option) => (
+                    <label
+                      key={option}
+                      className="rounded-lg border border-gray-300 py-2 text-center font-medium text-gray-700 transition-colors has-checked:border-blue-500 has-checked:bg-blue-500 has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-blue-500 has-focus-visible:ring-offset-2"
+                    >
+                      <input
+                        type="radio"
+                        name={`${idPrefix}-company`}
+                        value={option}
+                        checked={company === option}
+                        onChange={() => pickCompany(option)}
+                        className="sr-only"
+                      />
+                      <span translate="no">{option}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
 
               <div>
                 <label htmlFor={`${idPrefix}-bucket`} className={LABEL_CLASS}>
@@ -212,28 +185,29 @@ export default function EditScreen({ imageData, review, buckets, error, onConfir
             </div>
           </div>
 
-          {message && (
-            <p role="alert" className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-              {message}
-            </p>
-          )}
-
           {/* Actions */}
-          <div className="flex gap-4 mt-6">
-            <button
-              type="button"
-              onClick={onRetake}
-              className="flex-1 px-6 py-4 rounded-full font-medium text-gray-300 border-2 border-gray-600 hover:bg-gray-800 transition-colors"
-            >
-              Retake
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="flex-1 px-6 py-4 rounded-full font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-            >
-              Save Receipt
-            </button>
+          <div className="mt-auto shrink-0 space-y-3 px-4 py-3 sm:mt-0">
+            {message && (
+              <p role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {message}
+              </p>
+            )}
+            <div className="grid grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={onRetake}
+                className="px-4 py-3.5 rounded-full font-medium text-gray-300 border-2 border-gray-600 hover:bg-gray-800 transition-colors"
+              >
+                Retake
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                className="col-span-2 px-6 py-3.5 rounded-full font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+              >
+                Save Receipt
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -259,7 +233,7 @@ export default function EditScreen({ imageData, review, buckets, error, onConfir
             </svg>
           </button>
           {/* biome-ignore lint/performance/noImgElement: a camera data URL, which next/image can't optimize */}
-          <img src={imageData} alt="Receipt full view" className="max-h-[90vh] max-w-full object-contain" />
+          <img src={imageData} alt="Receipt full view" className="max-h-full max-w-full object-contain" />
         </div>
       )}
     </>
