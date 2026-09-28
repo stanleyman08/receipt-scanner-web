@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { unstable_rethrow, useRouter } from "next/navigation";
 import { useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
 import {
   createBucketAction,
@@ -153,7 +153,7 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
     await downloadYearExcel(yearReceipts, bucketMap, selectedYear, company);
   };
 
-  // Remembers the company on this device; the page then comes back with the other company's receipts.
+  // Moves this tab to the other company's page, which comes back with that company's receipts.
   const handleSwitchCompany = (next: Company) => {
     if (next === company) return;
     startCompanySwitch(async () => {
@@ -161,7 +161,9 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
       try {
         const result = await selectCompanyAction(next);
         if (!result.ok) setError(result.error);
-      } catch {
+      } catch (err) {
+        // A switch that worked ends in Next's redirect, which isn't a failure.
+        unstable_rethrow(err);
         setError(SWITCH_FAILED);
       }
     });
@@ -415,62 +417,44 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
               <CompanySwitcher company={shownCompany} isSwitching={isSwitchingCompany} onSwitch={handleSwitchCompany} />
             </div>
 
-            {error && (
-              <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                {error}
-                <button type="button" onClick={() => setError(null)} className="ml-2 text-red-500 hover:text-red-700">
-                  ×
-                </button>
-              </div>
-            )}
-
-            {/* Always there, so screen readers announce messages such as "Receipt moved to Peko Peko." */}
-            <div role="status">
-              {success && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">{success}</div>
+            {/* Out of reach while the other company loads: anything started here would be dropped by the switch. */}
+            <div inert={isSwitchingCompany} className={isSwitchingCompany ? "opacity-50" : undefined}>
+              {error && (
+                <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                  {error}
+                  <button type="button" onClick={() => setError(null)} className="ml-2 text-red-500 hover:text-red-700">
+                    ×
+                  </button>
+                </div>
               )}
-            </div>
 
-            {/* No buckets prompt */}
-            {sortedBuckets.length === 0 && (
-              <div className="mb-6 p-6 bg-blue-50 border border-blue-200 rounded-lg text-center">
-                <p className="text-blue-800 font-medium mb-2">Create your first bucket to get started</p>
-                <p className="text-blue-600 text-sm mb-4">
-                  Buckets help you organize receipts by Year, Month, and Category.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setIsAddBucketModalOpen(true)}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700"
-                >
-                  Add Bucket
-                </button>
+              {/* Always there, so screen readers announce messages such as "Receipt moved to Peko Peko." */}
+              <div role="status">
+                {success && (
+                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
+                    {success}
+                  </div>
+                )}
               </div>
-            )}
 
-            {/* Mobile bucket selector - rendered above flex container */}
-            {sortedBuckets.length > 0 && (
-              <BucketSidebar
-                buckets={bucketsForYearMonth}
-                selectedBucket={selectedBucket}
-                receiptCounts={receiptCounts}
-                onSelectBucket={handleSelectBucket}
-                onAddBucket={() => setIsAddBucketModalOpen(true)}
-                variant="mobile"
-                selectedYear={selectedYear}
-                selectedMonth={selectedMonth}
-                years={uniqueYears}
-                months={uniqueMonths}
-                yearReceiptCounts={yearReceiptCounts}
-                onSelectYear={handleSelectYear}
-                onSelectMonth={handleSelectMonth}
-                onExportYear={handleExportYear}
-                yearReceiptTotal={yearReceiptTotal}
-              />
-            )}
+              {/* No buckets prompt */}
+              {sortedBuckets.length === 0 && (
+                <div className="mb-6 p-6 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                  <p className="text-blue-800 font-medium mb-2">Create your first bucket to get started</p>
+                  <p className="text-blue-600 text-sm mb-4">
+                    Buckets help you organize receipts by Year, Month, and Category.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddBucketModalOpen(true)}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700"
+                  >
+                    Add Bucket
+                  </button>
+                </div>
+              )}
 
-            <div className="flex flex-col md:flex-row md:gap-8">
-              {/* Desktop Sidebar - only shown when there are buckets */}
+              {/* Mobile bucket selector - rendered above flex container */}
               {sortedBuckets.length > 0 && (
                 <BucketSidebar
                   buckets={bucketsForYearMonth}
@@ -478,7 +462,7 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
                   receiptCounts={receiptCounts}
                   onSelectBucket={handleSelectBucket}
                   onAddBucket={() => setIsAddBucketModalOpen(true)}
-                  variant="desktop"
+                  variant="mobile"
                   selectedYear={selectedYear}
                   selectedMonth={selectedMonth}
                   years={uniqueYears}
@@ -491,54 +475,77 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
                 />
               )}
 
-              {/* Main content area */}
-              <div className="flex-1 min-w-0">
-                {/* Header with bucket info and controls */}
-                {selectedBucket !== null && (
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
-                    <h2 className="text-xl font-semibold text-gray-800">
-                      {formatBucketLabel(selectedBucket)} ({filteredReceipts.length})
-                    </h2>
-                    <div className="flex items-center gap-3">
-                      <ExportButton receipts={filteredReceipts} bucket={selectedBucket} />
+              <div className="flex flex-col md:flex-row md:gap-8">
+                {/* Desktop Sidebar - only shown when there are buckets */}
+                {sortedBuckets.length > 0 && (
+                  <BucketSidebar
+                    buckets={bucketsForYearMonth}
+                    selectedBucket={selectedBucket}
+                    receiptCounts={receiptCounts}
+                    onSelectBucket={handleSelectBucket}
+                    onAddBucket={() => setIsAddBucketModalOpen(true)}
+                    variant="desktop"
+                    selectedYear={selectedYear}
+                    selectedMonth={selectedMonth}
+                    years={uniqueYears}
+                    months={uniqueMonths}
+                    yearReceiptCounts={yearReceiptCounts}
+                    onSelectYear={handleSelectYear}
+                    onSelectMonth={handleSelectMonth}
+                    onExportYear={handleExportYear}
+                    yearReceiptTotal={yearReceiptTotal}
+                  />
+                )}
+
+                {/* Main content area */}
+                <div className="flex-1 min-w-0">
+                  {/* Header with bucket info and controls */}
+                  {selectedBucket !== null && (
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
+                      <h2 className="text-xl font-semibold text-gray-800">
+                        {formatBucketLabel(selectedBucket)} ({filteredReceipts.length})
+                      </h2>
+                      <div className="flex items-center gap-3">
+                        <ExportButton receipts={filteredReceipts} bucket={selectedBucket} />
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Scanning indicator banner */}
-                {selectedBucket && (
-                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-blue-700 text-sm font-medium">
-                      Scanning into: {formatBucketWithCompany(selectedBucket)}
-                    </p>
-                  </div>
-                )}
+                  {/* Scanning indicator banner */}
+                  {selectedBucket && (
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-blue-700 text-sm font-medium">
+                        Scanning into: {formatBucketWithCompany(selectedBucket)}
+                      </p>
+                    </div>
+                  )}
 
-                {/* Receipt table */}
-                <ReceiptTable
-                  receipts={filteredReceipts}
-                  selectedBucket={selectedBucket}
-                  onDelete={handleDelete}
-                  onEdit={handleEdit}
-                  deletingId={deletingId}
-                />
+                  {/* Receipt table */}
+                  <ReceiptTable
+                    receipts={filteredReceipts}
+                    selectedBucket={selectedBucket}
+                    onDelete={handleDelete}
+                    onEdit={handleEdit}
+                    deletingId={deletingId}
+                  />
 
-                {/* Spacer for fixed bottom bar on mobile */}
-                <div className="h-24 md:h-0" />
+                  {/* Spacer for fixed bottom bar on mobile */}
+                  <div className="h-24 md:h-0" />
+                </div>
               </div>
-            </div>
 
-            {/* Scan buttons - fixed on mobile, relative on desktop */}
-            <div className="fixed bottom-0 left-0 right-0 md:relative md:mt-6 bg-white md:bg-transparent border-t md:border-0 p-4 md:p-0 z-40">
-              <CameraCapture
-                onCapture={handleCapture}
-                onOpenCamera={handleOpenCamera}
-                onCloseCamera={handleCloseCamera}
-                isCameraOpen={isCameraOpen}
-                isLoading={isProcessing}
-                disabled={!canScan}
-                selectedBucket={selectedBucket}
-              />
+              {/* Scan buttons - fixed on mobile, relative on desktop */}
+              <div className="fixed bottom-0 left-0 right-0 md:relative md:mt-6 bg-white md:bg-transparent border-t md:border-0 p-4 md:p-0 z-40">
+                <CameraCapture
+                  onCapture={handleCapture}
+                  onOpenCamera={handleOpenCamera}
+                  onCloseCamera={handleCloseCamera}
+                  isCameraOpen={isCameraOpen}
+                  isLoading={isProcessing}
+                  disabled={!canScan}
+                  selectedBucket={selectedBucket}
+                />
+              </div>
             </div>
           </div>
         </main>

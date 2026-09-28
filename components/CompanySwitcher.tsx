@@ -24,6 +24,11 @@ export default function CompanySwitcher({ company, isSwitching, onSwitch }: Comp
     selectedRef.current?.focus();
   }, []);
 
+  // A switch that ends with this switcher still on screen didn't go through, so no later switcher takes focus for it.
+  useEffect(() => {
+    if (!isSwitching) isFocusPending = false;
+  }, [isSwitching]);
+
   const handleClick = (option: Company) => {
     if (isSwitching || option === company) return;
     isFocusPending = true;

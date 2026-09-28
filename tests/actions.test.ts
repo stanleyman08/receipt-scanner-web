@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createBucketAction,
   deleteReceiptAction,
@@ -9,12 +9,23 @@ import {
 import { auth } from "@/lib/auth";
 import type { ReceiptDetails } from "@/types/receipt";
 
-// Mocked at the boundaries: Better Auth finds no session unless a test signs in, and the database fails the test if
-// it's reached.
-const { getSql } = vi.hoisted(() => ({ getSql: vi.fn() }));
+// Mocked at the boundaries: Better Auth finds no session unless a test signs in, the database fails the test if it's
+// reached, and cookies and redirects are recorded. Like Next's own redirect, the mock throws.
+const { getSql, cookieStore, redirect } = vi.hoisted(() => ({
+  getSql: vi.fn(),
+  cookieStore: { get: vi.fn(), set: vi.fn() },
+  redirect: vi.fn((): never => {
+    throw new Error("NEXT_REDIRECT");
+  }),
+}));
 vi.mock("@/lib/db/sql", () => ({ getSql }));
 vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: vi.fn(async () => null) } } }));
-vi.mock("next/headers", () => ({ headers: vi.fn(async () => new Headers()) }));
+vi.mock("next/headers", () => ({ headers: vi.fn(async () => new Headers()), cookies: vi.fn(async () => cookieStore) }));
+vi.mock("next/navigation", () => ({ redirect, RedirectType: { push: "push", replace: "replace" } }));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 const bucket = { company: "Carino" as const, year: 2026, month: 3, category: "Food" as const };
 const details: ReceiptDetails = {
@@ -59,5 +70,14 @@ describe("server actions with a signed-in session", () => {
       ok: false,
       error: expect.stringContaining("details look wrong"),
     });
+    expect(cookieStore.set).not.toHaveBeenCalled();
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("selectCompanyAction remembers the company on this device and moves the tab to that company's address", async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValueOnce({ session: {}, user: {} } as never);
+    await expect(selectCompanyAction("Peko Peko")).rejects.toThrow("NEXT_REDIRECT");
+    expect(cookieStore.set).toHaveBeenCalledWith("company", "Peko Peko", expect.objectContaining({ httpOnly: true }));
+    expect(redirect).toHaveBeenCalledWith("/?company=Peko+Peko", "replace");
   });
 });

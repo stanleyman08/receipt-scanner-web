@@ -1,10 +1,11 @@
 "use server";
 
+import { RedirectType, redirect } from "next/navigation";
 import { z } from "zod";
 import { getSession, SIGNED_OUT_MESSAGE } from "@/lib/auth-session";
 import { getSql } from "@/lib/db/sql";
 import { createBucket, deleteReceipt, saveReceipt, updateReceipt } from "@/lib/receipt-store";
-import { rememberSelectedCompany } from "@/lib/selected-company";
+import { companyPath, rememberSelectedCompany } from "@/lib/selected-company";
 import { BUCKET_CATEGORIES, type Bucket, type BucketKey } from "@/types/bucket";
 import { COMPANIES, type Company } from "@/types/company";
 import type { Receipt, ReceiptDetails } from "@/types/receipt";
@@ -83,11 +84,12 @@ export async function deleteReceiptAction(id: string): Promise<ActionResult<null
   return deleted ? { ok: true, value: null } : { ok: false, error: RECEIPT_GONE };
 }
 
-// Remembers the company on this device. Setting the cookie makes Next render the page again, now with that company.
-export async function selectCompanyAction(company: Company): Promise<ActionResult<null>> {
+// Remembers the company on this device and moves this tab to that company's page, in the same response. It only
+// returns when it refuses.
+export async function selectCompanyAction(company: Company): Promise<ActionResult<never>> {
   if (!(await isSignedIn())) return { ok: false, error: SIGNED_OUT_MESSAGE };
   const parsed = companySchema.safeParse(company);
   if (!parsed.success) return { ok: false, error: INVALID_DETAILS };
   await rememberSelectedCompany(parsed.data);
-  return { ok: true, value: null };
+  redirect(companyPath(parsed.data), RedirectType.replace);
 }
