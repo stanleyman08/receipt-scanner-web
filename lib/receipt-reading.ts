@@ -39,14 +39,19 @@ function valueOfType(fields: ExpenseField[], types: string[]): string | null {
   return null;
 }
 
-/** The first field whose printed label contains one of the labels, skipping fields of the excluded types. */
+/**
+ * The first field whose printed label contains one of the labels, skipping fields of the excluded types. Its value
+ * must contain a digit, as invoice numbers and amounts do: a cancelled card payment's "Ref. #" reads "TRANSACTION NOT
+ * COMPLETED".
+ */
 function valueOfLabel(fields: ExpenseField[], labels: string[], excludedTypes: string[] = []): string | null {
   for (const label of labels) {
     const match = fields.find((f) => {
       const type = f.Type?.Text?.toUpperCase() ?? "";
       return (
         f.LabelDetection?.Text?.toUpperCase().includes(label.toUpperCase()) &&
-        !excludedTypes.some((excluded) => type.includes(excluded))
+        !excludedTypes.some((excluded) => type.includes(excluded)) &&
+        /\d/.test(f.ValueDetection?.Text ?? "")
       );
     });
     if (match) return cleanValue(match);
