@@ -2,9 +2,12 @@ import { PGlite } from "@electric-sql/pglite";
 import { describe, expect, it } from "vitest";
 import { SETUP_STATEMENTS } from "@/lib/db/schema";
 
-// The statements `pnpm setup-db` runs on Neon, in the same order, run against an in-process Postgres instead.
+// The statements `pnpm setup-db` runs on Neon, in the same order and in one transaction, run against an in-process
+// Postgres instead.
 async function setUpDatabase(pg: PGlite) {
-  for (const statement of SETUP_STATEMENTS) await pg.exec(statement);
+  await pg.transaction(async (tx) => {
+    for (const statement of SETUP_STATEMENTS) await tx.exec(statement);
+  });
 }
 
 // New and older databases must end up with the same shape, so later schema changes work on both.

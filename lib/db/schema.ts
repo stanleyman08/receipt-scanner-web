@@ -1,4 +1,5 @@
-// How the database is set up. `pnpm setup-db` runs SETUP_STATEMENTS in order; the tests run them on PGlite.
+// How the database is set up. `pnpm setup-db` runs SETUP_STATEMENTS in order, in one transaction; the tests run them
+// on PGlite.
 //
 // The CREATE statements only make tables that don't exist yet: editing one changes new databases, not existing ones.
 // To change a table that already exists, update its CREATE statement for new databases and append a statement to

@@ -13,7 +13,6 @@ if (!url) {
 const sql = neon(url);
 
 console.log(`Setting up ${new URL(url).host}`);
-for (const statement of SETUP_STATEMENTS) {
-  await sql.query(statement);
-}
+// One transaction, so a run that fails partway changes nothing rather than leaving a table half changed.
+await sql.transaction(SETUP_STATEMENTS.map((statement) => sql.query(statement)));
 console.log(`Ran ${SETUP_STATEMENTS.length} statements: missing tables created, schema changes applied.`);
