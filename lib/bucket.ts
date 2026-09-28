@@ -1,4 +1,5 @@
 import { type Bucket, type BucketKey, compareBuckets } from "@/types/bucket";
+import type { Company } from "@/types/company";
 import type { Receipt } from "@/types/receipt";
 
 interface SuggestBucketInput {
@@ -10,11 +11,12 @@ interface SuggestBucketInput {
   handPicked: BucketKey | null;
 }
 
-// Where a receipt date points: that month, in the selected bucket's category. Without a date, the selected bucket.
+// Where a receipt date points: that month, at the selected bucket's company and in its category. Without a date, the
+// selected bucket.
 export function bucketForDate(receiptDate: string | null, selected: BucketKey): BucketKey {
   if (!receiptDate) return selected;
   const [year, month] = receiptDate.split("-").map(Number);
-  return { year, month, category: selected.category };
+  return { company: selected.company, year, month, category: selected.category };
 }
 
 // A receipt follows its receipt date, unless a bucket was picked by hand: that always wins.
@@ -33,7 +35,11 @@ export function isFiledByHand(bucket: BucketKey, receiptDate: string | null): bo
 }
 
 export function isSameBucket(a: BucketKey, b: BucketKey): boolean {
-  return a.year === b.year && a.month === b.month && a.category === b.category;
+  return a.company === b.company && a.year === b.year && a.month === b.month && a.category === b.category;
+}
+
+export function bucketsOf(buckets: Bucket[], company: Company): Bucket[] {
+  return buckets.filter((bucket) => bucket.company === company);
 }
 
 // Filter receipts by bucket_id

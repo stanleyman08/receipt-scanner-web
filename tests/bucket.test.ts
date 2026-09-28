@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   bucketExists,
+  bucketsOf,
   filterBucketsByYearMonth,
   getDefaultBucket,
   getUniqueMonthsForYear,
@@ -11,9 +12,16 @@ import {
   suggestBucket,
 } from "@/lib/bucket";
 import type { Bucket, BucketCategory } from "@/types/bucket";
+import type { Company } from "@/types/company";
 
-function bucket(id: string, year: number, month: number, category: BucketCategory): Bucket {
-  return { id, year, month, category, created_at: "2026-01-01T00:00:00Z" };
+function bucket(
+  id: string,
+  year: number,
+  month: number,
+  category: BucketCategory,
+  company: Company = "Carino",
+): Bucket {
+  return { id, company, year, month, category, created_at: "2026-01-01T00:00:00Z" };
 }
 
 const march2025Supply = bucket("2025-03-supply", 2025, 3, "Supply");
@@ -69,12 +77,30 @@ describe("sidebar lists", () => {
   });
 });
 
+describe("bucketsOf", () => {
+  it("lists one company's buckets", () => {
+    const pekoPekoJanuary = bucket("peko-peko-2026-01-food", 2026, 1, "Food", "Peko Peko");
+    expect(bucketsOf([...buckets, pekoPekoJanuary], "Peko Peko")).toEqual([pekoPekoJanuary]);
+  });
+});
+
 describe("suggestBucket", () => {
-  const scanningInto = { year: 2026, month: 1, category: "Food" as const };
-  const pickedSupply = { year: 2025, month: 7, category: "Supply" as const };
+  const scanningInto = { company: "Carino" as const, year: 2026, month: 1, category: "Food" as const };
+  const pickedSupply = { company: "Carino" as const, year: 2025, month: 7, category: "Supply" as const };
 
   it("files a receipt under its receipt date's month, in the category it was scanned into", () => {
     expect(suggestBucket({ receiptDate: "2025-12-30", selected: scanningInto, handPicked: null })).toEqual({
+      company: "Carino",
+      year: 2025,
+      month: 12,
+      category: "Food",
+    });
+  });
+
+  it("keeps the company of the bucket scanned into", () => {
+    const pekoPeko = { ...scanningInto, company: "Peko Peko" as const };
+    expect(suggestBucket({ receiptDate: "2025-12-30", selected: pekoPeko, handPicked: null })).toEqual({
+      company: "Peko Peko",
       year: 2025,
       month: 12,
       category: "Food",
@@ -93,8 +119,13 @@ describe("suggestBucket", () => {
 });
 
 describe("handPickFor", () => {
-  const december2025Food = { year: 2025, month: 12, category: "Food" as const };
-  const july2025Supply = { year: 2025, month: 7, category: "Supply" as const };
+  const december2025Food = { company: "Carino" as const, year: 2025, month: 12, category: "Food" as const };
+  const july2025Supply = { company: "Carino" as const, year: 2025, month: 7, category: "Supply" as const };
+
+  it("counts the same month and category at the other company as a different bucket", () => {
+    const pekoPekoDecember = { ...december2025Food, company: "Peko Peko" as const };
+    expect(handPickFor(pekoPekoDecember, december2025Food)).toEqual(pekoPekoDecember);
+  });
 
   it("treats picking the bucket the receipt date points to as following the date again", () => {
     expect(handPickFor({ ...december2025Food }, december2025Food)).toBeNull();
@@ -106,8 +137,8 @@ describe("handPickFor", () => {
 });
 
 describe("isFiledByHand", () => {
-  const march2026Food = { year: 2026, month: 3, category: "Food" as const };
-  const april2026Food = { year: 2026, month: 4, category: "Food" as const };
+  const march2026Food = { company: "Carino" as const, year: 2026, month: 3, category: "Food" as const };
+  const april2026Food = { company: "Carino" as const, year: 2026, month: 4, category: "Food" as const };
 
   it("counts a receipt filed away from its receipt date's month as picked by hand", () => {
     expect(isFiledByHand(april2026Food, "2026-03-31")).toBe(true);
