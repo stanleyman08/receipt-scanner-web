@@ -43,6 +43,14 @@ export const APP_SCHEMA = [
   )`,
   "CREATE INDEX IF NOT EXISTS receipts_bucket_id_idx ON receipts (bucket_id)",
   "CREATE INDEX IF NOT EXISTS receipts_created_at_idx ON receipts (created_at DESC)",
+  // Each scan's photo and what Textract returned for it, kept for a while so a misread can be traced (see saveScan).
+  `CREATE TABLE IF NOT EXISTS scans (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    image bytea NOT NULL,
+    textract jsonb NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+  )`,
+  "CREATE INDEX IF NOT EXISTS scans_created_at_idx ON scans (created_at)",
 ];
 
 // Changes that bring tables created before them to the shape above; each leaves a new table as it is. Append only:

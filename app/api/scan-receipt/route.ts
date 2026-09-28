@@ -1,6 +1,8 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { after, type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession, SIGNED_OUT_MESSAGE } from "@/lib/auth-session";
+import { getSql } from "@/lib/db/sql";
+import { saveScan } from "@/lib/receipt-store";
 import { analyzeReceipt } from "@/lib/textract";
 import type { ScanResponse } from "@/types/receipt";
 
@@ -20,7 +22,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<ScanRespo
 
   try {
     const imageBytes = Buffer.from(parsed.data.image.replace(DATA_URL_PREFIX, ""), "base64");
-    const details = await analyzeReceipt(imageBytes);
+    const { details, textract } = await analyzeReceipt(imageBytes);
+    // Kept once the response is sent, so the scan never waits on it. It only helps trace misreads later, so a scan
+    // that can't be kept is logged rather than failed.
+    after(() => saveScan(getSql(), textract, imageBytes).catch((error) => console.error("Error keeping scan:", error)));
     return NextResponse.json({ success: true, details });
   } catch (error) {
     console.error("Error scanning receipt:", error);

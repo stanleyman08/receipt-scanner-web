@@ -3,7 +3,7 @@ import type { Bucket, BucketCategory, BucketKey } from "@/types/bucket";
 import type { Company } from "@/types/company";
 import type { Receipt, ReceiptDetails } from "@/types/receipt";
 
-// Reads and writes buckets and receipts. Every function takes the SQL runner, so tests can run them on PGlite.
+// Reads and writes buckets, receipts and scans. Every function takes the SQL runner, so tests can run them on PGlite.
 
 // Both companies' buckets: the review screen and edit dialog can file a receipt at either company.
 export async function listBuckets(sql: Sql): Promise<Bucket[]> {
@@ -88,6 +88,24 @@ export async function updateReceipt(
 export async function deleteReceipt(sql: Sql, id: string): Promise<boolean> {
   const rows = await sql`DELETE FROM receipts WHERE id = ${id}::uuid RETURNING id`;
   return rows.length > 0;
+}
+
+// Long enough to report a misread noticed on the review screen, or in the days after.
+const SCAN_RETENTION = "3 days";
+// Caps the table on the database's free plan: a busy day can be 100 scans of up to about 400 KB each.
+const MAX_SCANS_KEPT = 300;
+
+// Keeps the photo a scan read and what Textract returned for it, so a misread can be traced later: the response
+// replayed through the reader, the photo sent again. The same statement deletes scans older than SCAN_RETENTION and
+// any beyond the newest MAX_SCANS_KEPT, counting the new one.
+export async function saveScan(sql: Sql, textract: unknown, image: Uint8Array): Promise<void> {
+  await sql`
+    WITH expired AS (
+      DELETE FROM scans
+      WHERE created_at < now() - ${SCAN_RETENTION}::interval
+        OR id NOT IN (SELECT id FROM scans ORDER BY created_at DESC LIMIT ${MAX_SCANS_KEPT - 1})
+    )
+    INSERT INTO scans (image, textract) VALUES (${image}, ${JSON.stringify(textract)}::jsonb)`;
 }
 
 function toReceipt(row: Record<string, unknown>): Receipt {

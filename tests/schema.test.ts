@@ -29,7 +29,7 @@ describe("database setup", () => {
       "select table_name from information_schema.tables where table_schema = 'public'",
     );
     expect(new Set(rows.map((row) => row.table_name))).toEqual(
-      new Set(["user", "session", "account", "verification", "rateLimit", "buckets", "receipts"]),
+      new Set(["user", "session", "account", "verification", "rateLimit", "buckets", "receipts", "scans"]),
     );
     expect(await hasPerCompanyUniqueConstraint(pg)).toBe(true);
   });

@@ -7,6 +7,7 @@ A web application for scanning receipts using your phone's camera. It reads each
 - Two companies, Carino and Peko Peko, each with its own buckets, receipts and exports, and a switcher at the top
 - Scan receipts using your device's camera, or upload a photo
 - Automatic data extraction (vendor, date, subtotal, GST, total, invoice number)
+- Each scan's photo and what Textract returned for it are kept for 3 days (the newest 300 at most), so a misread field can be traced
 - Receipts filed into the bucket for their date, with pickers to choose another bucket or the other company
 - One shared account for everyone at both companies, with sign-in attempts rate-limited
 - Export a bucket, or a company's whole year, to Excel
@@ -93,6 +94,10 @@ pnpm test        # Vitest
 
 Lefthook runs Biome on staged files before each commit, and the tests and type check before each push.
 
+## Tracing a misread
+
+When a scan reads a field wrong, its photo (`image`, the JPEG the app sent) and what Textract returned for it (`textract`) are in the `scans` table for 3 days, as long as it stays among the newest 300. Find the scan by the time the receipt was saved. Look at the photo to see what's printed, and replay the response through `readReceipt` in `lib/receipt-reading.ts` to see why: pass it `textract.ExpenseDocuments[0]`, and the scan's `created_at` as the scan date, since dates are read relative to it. To try a fix that changes the photo or the Textract call, send the photo again. Older scans are deleted each time a new one is kept. Both columns hold everything printed on the receipt, so keep them out of the repo, which is public.
+
 ## Tech Stack
 
 - **Framework**: Next.js 16 (App Router)
@@ -121,7 +126,7 @@ Lefthook runs Biome on staged files before each commit, and the tests and type c
 ├── lib/
 │   ├── auth.ts               # Better Auth setup
 │   ├── db/                   # Neon connection and table definitions
-│   ├── receipt-store.ts      # Reads and writes buckets and receipts
+│   ├── receipt-store.ts      # Reads and writes buckets, receipts and scans
 │   ├── receipt-reading.ts    # Turns a Textract result into receipt details
 │   ├── textract.ts           # AWS Textract call
 │   └── excel.ts              # Excel export
