@@ -24,7 +24,10 @@ interface VendorRule {
 }
 
 // Vendors whose receipts come in often. Superstore's card "Ref. #" and a supplier's "Invoice #" already read right.
-const VENDOR_RULES: VendorRule[] = [{ vendor: /walmart/i, invoiceLabels: ["APPROVAL #"], isMonthFirst: true }];
+const VENDOR_RULES: VendorRule[] = [
+  { vendor: /walmart/i, invoiceLabels: ["APPROVAL #"], isMonthFirst: true },
+  { vendor: /safeway/i, invoiceLabels: ["AUTH #"], isMonthFirst: true },
+];
 
 /**
  * The details a scan pre-fills from Textract's AnalyzeExpense result. Anything the receipt doesn't show, or that

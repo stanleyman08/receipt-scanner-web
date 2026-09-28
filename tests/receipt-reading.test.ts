@@ -184,6 +184,27 @@ describe("readReceipt", () => {
       expect(fields.receipt_date).toBe(date);
     });
 
+    it("takes a Safeway receipt's card authorization number as its invoice number", () => {
+      const fields = readReceipt(
+        receipt(
+          field("VENDOR_NAME", "Safeway Seafair"),
+          field("INVOICE_RECEIPT_ID", "123", "Tran"),
+          field("OTHER", "123000", "RCPT"),
+          field("OTHER", "550123", "AUTH #"),
+          field("OTHER", "001234567", "REF#"),
+        ),
+      );
+      expect(fields.invoice_number).toBe("550123");
+    });
+
+    it("reads a Safeway date month first", () => {
+      const fields = readReceipt(
+        receipt(field("VENDOR_NAME", "Safeway Seafair"), field("INVOICE_RECEIPT_DATE", "07/05/2026")),
+        SCANNED_ON,
+      );
+      expect(fields.receipt_date).toBe("2026-07-05");
+    });
+
     it("still leaves another vendor's month-first date blank", () => {
       const fields = readReceipt(
         receipt(field("VENDOR_NAME", "Corner Grocery"), field("INVOICE_RECEIPT_DATE", "07/20/26")),
