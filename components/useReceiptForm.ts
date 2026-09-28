@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { bucketForDate, handPickFor, suggestBucket } from "@/lib/bucket";
+import { useBucketChoice } from "@/components/useBucketChoice";
 import { centsToInput, parseAmountCents } from "@/lib/money";
-import type { BucketKey } from "@/types/bucket";
 import type { ReceiptReview } from "@/types/capture-flow";
 
 export type ReceiptFormField = "vendor" | "receiptDate" | "invoiceNumber" | "subtotal" | "gst" | "total";
 
-// Shared by the review screen and the edit dialog: text fields for the details, and a bucket that follows the
-// receipt date until one is picked by hand.
+// Shared by the review screen and the edit dialog: text fields for the details, and where the receipt is filed.
 export function useReceiptForm(initial: ReceiptReview) {
   const [fields, setFields] = useState({
     vendor: initial.details.vendor ?? "",
@@ -19,19 +17,14 @@ export function useReceiptForm(initial: ReceiptReview) {
     gst: centsToInput(initial.details.gst_cents),
     total: centsToInput(initial.details.total_cents),
   });
-  const { selected } = initial;
-  const [handPicked, setHandPicked] = useState<BucketKey | null>(initial.pickedByHand ? initial.bucket : null);
   const receiptDate = fields.receiptDate || null;
-  // Offered in the picker even after another bucket was picked by hand.
-  const suggested = bucketForDate(receiptDate, selected);
-  const bucket = suggestBucket({ receiptDate, selected, handPicked });
+  const { company, selected, suggested, bucket, pickedByHand, pickCompany, pickBucket } = useBucketChoice(
+    initial,
+    receiptDate,
+  );
 
   const setField = (field: ReceiptFormField, value: string) => {
     setFields((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const pickBucket = (picked: BucketKey) => {
-    setHandPicked(handPickFor(picked, suggested));
   };
 
   /** The reviewed receipt, or null when an amount that was filled in isn't a plain number. */
@@ -51,10 +44,10 @@ export function useReceiptForm(initial: ReceiptReview) {
         total_cents: totalCents,
       },
       bucket,
-      pickedByHand: handPicked !== null,
+      pickedByHand,
       selected,
     };
   };
 
-  return { fields, setField, bucket, suggested, pickBucket, toReview };
+  return { fields, setField, company, pickCompany, bucket, suggested, pickBucket, toReview };
 }

@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import BucketPicker from "@/components/BucketPicker";
+import CompanyPicker from "@/components/CompanyPicker";
 import { useReceiptForm } from "@/components/useReceiptForm";
 import type { Bucket } from "@/types/bucket";
 import type { ReceiptReview } from "@/types/capture-flow";
@@ -23,7 +24,7 @@ interface EditScreenProps {
 
 export default function EditScreen({ imageData, review, buckets, error, onConfirm, onRetake }: EditScreenProps) {
   const idPrefix = useId();
-  const { fields, setField, bucket, suggested, pickBucket, toReview } = useReceiptForm(review);
+  const { fields, setField, company, pickCompany, bucket, suggested, pickBucket, toReview } = useReceiptForm(review);
   const [amountError, setAmountError] = useState<string | null>(null);
   const [showFullImage, setShowFullImage] = useState(false);
 
@@ -180,6 +181,18 @@ export default function EditScreen({ imageData, review, buckets, error, onConfir
                   onChange={(e) => setField("invoiceNumber", e.target.value)}
                   className={INPUT_CLASS}
                   placeholder="Enter invoice number"
+                />
+              </div>
+
+              <div>
+                <label htmlFor={`${idPrefix}-company`} className={LABEL_CLASS}>
+                  Company
+                </label>
+                <CompanyPicker
+                  id={`${idPrefix}-company`}
+                  value={company}
+                  onChange={pickCompany}
+                  className={INPUT_CLASS}
                 />
               </div>
 

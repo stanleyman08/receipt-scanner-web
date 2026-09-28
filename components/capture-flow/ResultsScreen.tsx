@@ -1,7 +1,7 @@
 "use client";
 
 import { formatCents } from "@/lib/money";
-import { type BucketKey, formatBucketLabel } from "@/types/bucket";
+import { type BucketKey, formatBucketWithCompany } from "@/types/bucket";
 import { formatReceiptDate, type Receipt } from "@/types/receipt";
 
 interface ResultsScreenProps {
@@ -36,7 +36,7 @@ export default function ResultsScreen({ imageData, receipt, bucket, onSave, onSc
             </svg>
           </div>
           <h2 className="text-xl font-semibold text-white">Receipt Scanned!</h2>
-          <p className="text-sm text-gray-400 mt-1">Filed into {formatBucketLabel(bucket)}</p>
+          <p className="text-sm text-gray-400 mt-1">Filed into {formatBucketWithCompany(bucket)}</p>
         </div>
 
         {/* Receipt card */}

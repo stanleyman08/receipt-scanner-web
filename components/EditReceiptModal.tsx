@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import BucketPicker from "@/components/BucketPicker";
+import CompanyPicker from "@/components/CompanyPicker";
 import { useReceiptForm } from "@/components/useReceiptForm";
 import { isFiledByHand } from "@/lib/bucket";
 import type { Bucket, BucketKey } from "@/types/bucket";
@@ -34,7 +35,7 @@ export default function EditReceiptModal({
   onSave,
 }: EditReceiptModalProps) {
   const idPrefix = useId();
-  const { fields, setField, bucket, suggested, pickBucket, toReview } = useReceiptForm({
+  const { fields, setField, company, pickCompany, bucket, suggested, pickBucket, toReview } = useReceiptForm({
     details: receipt,
     bucket: receiptBucket,
     // A receipt filed away from its date's month keeps its bucket when the date is edited.
@@ -173,6 +174,13 @@ export default function EditReceiptModal({
               className={INPUT_CLASS}
               placeholder="Enter invoice number"
             />
+          </div>
+
+          <div>
+            <label htmlFor={`${idPrefix}-company`} className={LABEL_CLASS}>
+              Company
+            </label>
+            <CompanyPicker id={`${idPrefix}-company`} value={company} onChange={pickCompany} className={INPUT_CLASS} />
           </div>
 
           <div>
