@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { createBucketAction, deleteReceiptAction, saveReceiptAction, updateReceiptAction } from "@/app/actions";
+import {
+  createBucketAction,
+  deleteReceiptAction,
+  saveReceiptAction,
+  selectCompanyAction,
+  updateReceiptAction,
+} from "@/app/actions";
 import { auth } from "@/lib/auth";
 import type { ReceiptDetails } from "@/types/receipt";
 
@@ -10,7 +16,7 @@ vi.mock("@/lib/db/sql", () => ({ getSql }));
 vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: vi.fn(async () => null) } } }));
 vi.mock("next/headers", () => ({ headers: vi.fn(async () => new Headers()) }));
 
-const bucket = { year: 2026, month: 3, category: "Food" as const };
+const bucket = { company: "Carino" as const, year: 2026, month: 3, category: "Food" as const };
 const details: ReceiptDetails = {
   vendor: "Corner Grocery",
   receipt_date: "2026-03-28",
@@ -27,6 +33,7 @@ describe("server actions without a signed-in session", () => {
     ["saveReceiptAction", () => saveReceiptAction(details, bucket)],
     ["updateReceiptAction", () => updateReceiptAction(receiptId, details, bucket)],
     ["deleteReceiptAction", () => deleteReceiptAction(receiptId)],
+    ["selectCompanyAction", () => selectCompanyAction("Peko Peko")],
   ])("%s refuses and never touches the database", async (_name, run) => {
     await expect(run()).resolves.toEqual({ ok: false, error: expect.stringContaining("Sign in") });
     expect(getSql).not.toHaveBeenCalled();

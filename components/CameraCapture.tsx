@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import Webcam from "react-webcam";
-import { type Bucket, formatBucketLabel } from "@/types/bucket";
+import { type Bucket, formatBucketWithCompany } from "@/types/bucket";
 
 interface CameraCaptureProps {
   onCapture: (imageData: string) => void;
@@ -179,7 +179,7 @@ export default function CameraCapture({
           {/* Bucket indicator - hidden on mobile */}
           {selectedBucket && (
             <p className="hidden md:block text-gray-600 mb-4 text-sm">
-              Scanning into: {formatBucketLabel(selectedBucket)}
+              Scanning into: {formatBucketWithCompany(selectedBucket)}
             </p>
           )}
           <div className="flex md:flex-col gap-3 md:space-y-4 md:gap-0">

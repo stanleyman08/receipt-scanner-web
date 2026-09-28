@@ -4,7 +4,9 @@ import { z } from "zod";
 import { getSession, SIGNED_OUT_MESSAGE } from "@/lib/auth-session";
 import { getSql } from "@/lib/db/sql";
 import { createBucket, deleteReceipt, saveReceipt, updateReceipt } from "@/lib/receipt-store";
+import { rememberSelectedCompany } from "@/lib/selected-company";
 import { BUCKET_CATEGORIES, type Bucket, type BucketKey } from "@/types/bucket";
+import { COMPANIES, type Company } from "@/types/company";
 import type { Receipt, ReceiptDetails } from "@/types/receipt";
 
 // Errors come back as values: Next.js hides thrown messages from the browser in production.
@@ -19,7 +21,9 @@ const MAX_BUCKET_YEAR = 2100;
 const MAX_VENDOR_LENGTH = 200;
 const MAX_INVOICE_NUMBER_LENGTH = 100;
 
+const companySchema = z.enum(COMPANIES);
 const bucketKeySchema = z.object({
+  company: companySchema,
   year: z.number().int().min(MIN_BUCKET_YEAR).max(MAX_BUCKET_YEAR),
   month: z.number().int().min(1).max(12),
   category: z.enum(BUCKET_CATEGORIES),
@@ -77,4 +81,13 @@ export async function deleteReceiptAction(id: string): Promise<ActionResult<null
   if (!parsedId.success) return { ok: false, error: INVALID_DETAILS };
   const deleted = await deleteReceipt(getSql(), parsedId.data);
   return deleted ? { ok: true, value: null } : { ok: false, error: RECEIPT_GONE };
+}
+
+// Remembers the company on this device. Setting the cookie makes Next render the page again, now with that company.
+export async function selectCompanyAction(company: Company): Promise<ActionResult<null>> {
+  if (!(await isSignedIn())) return { ok: false, error: SIGNED_OUT_MESSAGE };
+  const parsed = companySchema.safeParse(company);
+  if (!parsed.success) return { ok: false, error: INVALID_DETAILS };
+  await rememberSelectedCompany(parsed.data);
+  return { ok: true, value: null };
 }
