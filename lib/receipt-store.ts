@@ -1,31 +1,37 @@
 import type { Sql } from "@/lib/db/sql";
 import type { Bucket, BucketCategory, BucketKey } from "@/types/bucket";
+import type { Company } from "@/types/company";
 import type { Receipt, ReceiptDetails } from "@/types/receipt";
 
 // Reads and writes buckets and receipts. Every function takes the SQL runner, so tests can run them on PGlite.
 
+// Both companies' buckets: the review screen and edit dialog can file a receipt at either company.
 export async function listBuckets(sql: Sql): Promise<Bucket[]> {
   const rows = await sql`
-    SELECT id, year, month, category, created_at FROM buckets
-    ORDER BY year DESC, month DESC, category`;
+    SELECT id, company, year, month, category, created_at FROM buckets
+    ORDER BY year DESC, month DESC, company, category`;
   return rows.map(toBucket);
 }
 
 // Creating a bucket that already exists returns the existing one.
 export async function createBucket(sql: Sql, key: BucketKey): Promise<Bucket> {
   const [row] = await sql`
-    INSERT INTO buckets (year, month, category) VALUES (${key.year}, ${key.month}, ${key.category})
-    ON CONFLICT (year, month, category) DO UPDATE SET category = EXCLUDED.category
-    RETURNING id, year, month, category, created_at`;
+    INSERT INTO buckets (company, year, month, category)
+    VALUES (${key.company}, ${key.year}, ${key.month}, ${key.category})
+    ON CONFLICT (company, year, month, category) DO UPDATE SET category = EXCLUDED.category
+    RETURNING id, company, year, month, category, created_at`;
   return toBucket(row);
 }
 
-export async function listReceipts(sql: Sql): Promise<Receipt[]> {
+// One company's receipts: the companies keep separate books.
+export async function listReceipts(sql: Sql, company: Company): Promise<Receipt[]> {
   const rows = await sql`
-    SELECT id, bucket_id, vendor, receipt_date::text AS receipt_date, invoice_number,
-           subtotal_cents, gst_cents, total_cents, created_at
-    FROM receipts
-    ORDER BY created_at DESC`;
+    SELECT receipts.id, receipts.bucket_id, receipts.vendor, receipts.receipt_date::text AS receipt_date,
+           receipts.invoice_number, receipts.subtotal_cents, receipts.gst_cents, receipts.total_cents,
+           receipts.created_at
+    FROM receipts JOIN buckets ON buckets.id = receipts.bucket_id
+    WHERE buckets.company = ${company}
+    ORDER BY receipts.created_at DESC`;
   return rows.map(toReceipt);
 }
 
@@ -33,8 +39,9 @@ export async function listReceipts(sql: Sql): Promise<Receipt[]> {
 export async function saveReceipt(sql: Sql, details: ReceiptDetails, bucket: BucketKey): Promise<Receipt> {
   const [row] = await sql`
     WITH bucket AS (
-      INSERT INTO buckets (year, month, category) VALUES (${bucket.year}, ${bucket.month}, ${bucket.category})
-      ON CONFLICT (year, month, category) DO UPDATE SET category = EXCLUDED.category
+      INSERT INTO buckets (company, year, month, category)
+      VALUES (${bucket.company}, ${bucket.year}, ${bucket.month}, ${bucket.category})
+      ON CONFLICT (company, year, month, category) DO UPDATE SET category = EXCLUDED.category
       RETURNING id
     )
     INSERT INTO receipts (bucket_id, vendor, receipt_date, invoice_number, subtotal_cents, gst_cents, total_cents)
@@ -56,10 +63,10 @@ export async function updateReceipt(
   const [row] = await sql`
     WITH target AS (SELECT id FROM receipts WHERE id = ${id}::uuid),
     bucket AS (
-      INSERT INTO buckets (year, month, category)
-      SELECT ${bucket.year}::integer, ${bucket.month}::integer, ${bucket.category}::text
+      INSERT INTO buckets (company, year, month, category)
+      SELECT ${bucket.company}::text, ${bucket.year}::integer, ${bucket.month}::integer, ${bucket.category}::text
       WHERE EXISTS (SELECT 1 FROM target)
-      ON CONFLICT (year, month, category) DO UPDATE SET category = EXCLUDED.category
+      ON CONFLICT (company, year, month, category) DO UPDATE SET category = EXCLUDED.category
       RETURNING id
     )
     UPDATE receipts
@@ -108,6 +115,7 @@ function toCents(value: unknown): number | null {
 function toBucket(row: Record<string, unknown>): Bucket {
   return {
     id: String(row.id),
+    company: row.company as Company,
     year: Number(row.year),
     month: Number(row.month),
     category: row.category as BucketCategory,
