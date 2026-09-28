@@ -1,4 +1,4 @@
-import { AnalyzeExpenseCommand, TextractClient } from "@aws-sdk/client-textract";
+import { AnalyzeExpenseCommand, type AnalyzeExpenseCommandOutput, TextractClient } from "@aws-sdk/client-textract";
 import { readReceipt } from "@/lib/receipt-reading";
 import type { ReceiptDetails } from "@/types/receipt";
 
@@ -19,8 +19,11 @@ const NOTHING_READ: ReceiptDetails = {
   total_cents: null,
 };
 
-export async function analyzeReceipt(imageBytes: Uint8Array): Promise<ReceiptDetails> {
-  const response = await textractClient.send(new AnalyzeExpenseCommand({ Document: { Bytes: imageBytes } }));
-  const document = response.ExpenseDocuments?.[0];
-  return document ? readReceipt(document) : NOTHING_READ;
+/** The details read from a receipt photo, and everything Textract returned for it. */
+export async function analyzeReceipt(
+  imageBytes: Uint8Array,
+): Promise<{ details: ReceiptDetails; textract: AnalyzeExpenseCommandOutput }> {
+  const textract = await textractClient.send(new AnalyzeExpenseCommand({ Document: { Bytes: imageBytes } }));
+  const document = textract.ExpenseDocuments?.[0];
+  return { details: document ? readReceipt(document) : NOTHING_READ, textract };
 }

@@ -17,7 +17,7 @@ The purchase date printed on the receipt.
 _Avoid_: Scan date, transaction date
 
 **Scan**:
-The photo-and-OCR step that pre-fills a receipt; the result becomes a receipt only once it's reviewed and saved.
+The photo-and-OCR step that pre-fills a receipt; the result becomes a receipt only once it's reviewed and saved. What the OCR returned is kept for 30 days, to trace a misread.
 _Avoid_: Upload, import
 
 **Bucket**:

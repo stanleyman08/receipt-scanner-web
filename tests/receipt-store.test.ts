@@ -8,6 +8,7 @@ import {
   listBuckets,
   listReceipts,
   saveReceipt,
+  saveScan,
   updateReceipt,
 } from "@/lib/receipt-store";
 import type { BucketCategory, BucketKey } from "@/types/bucket";
@@ -23,7 +24,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await pg.exec("TRUNCATE receipts, buckets");
+  await pg.exec("TRUNCATE receipts, buckets, scans");
 });
 
 function key(company: Company, year: number, month: number, category: BucketCategory): BucketKey {
@@ -158,5 +159,39 @@ describe("editing and deleting receipts", () => {
     expect(await deleteReceipt(sql, saved.id)).toBe(true);
     expect(await listReceipts(sql, "Carino")).toEqual([]);
     expect(await deleteReceipt(sql, saved.id)).toBe(false);
+  });
+});
+
+describe("keeping scans", () => {
+  // A made-up Textract response: only its shape matters here.
+  const response = {
+    ExpenseDocuments: [{ SummaryFields: [{ Type: { Text: "TOTAL" }, ValueDetection: { Text: "$21.00" } }] }],
+  };
+
+  async function keptScans() {
+    const { rows } = await pg.query<{ textract: unknown; image_bytes: number; days_old: number }>(
+      "SELECT textract, image_bytes, extract(day FROM now() - created_at)::int AS days_old FROM scans ORDER BY created_at",
+    );
+    return rows;
+  }
+
+  it("keeps what Textract returned for a scan, and the size of the photo it read", async () => {
+    await saveScan(sql, response, 48213);
+
+    expect(await keptScans()).toEqual([{ textract: response, image_bytes: 48213, days_old: 0 }]);
+  });
+
+  it("deletes scans more than 30 days old when saving another, and keeps the rest", async () => {
+    await saveScan(sql, response, 1);
+    await saveScan(sql, response, 2);
+    await pg.exec(`UPDATE scans SET created_at = now() - interval '31 days' WHERE image_bytes = 1;
+      UPDATE scans SET created_at = now() - interval '29 days' WHERE image_bytes = 2`);
+
+    await saveScan(sql, response, 3);
+
+    expect((await keptScans()).map((scan) => [scan.image_bytes, scan.days_old])).toEqual([
+      [2, 29],
+      [3, 0],
+    ]);
   });
 });

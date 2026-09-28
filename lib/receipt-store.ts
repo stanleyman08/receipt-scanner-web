@@ -3,7 +3,7 @@ import type { Bucket, BucketCategory, BucketKey } from "@/types/bucket";
 import type { Company } from "@/types/company";
 import type { Receipt, ReceiptDetails } from "@/types/receipt";
 
-// Reads and writes buckets and receipts. Every function takes the SQL runner, so tests can run them on PGlite.
+// Reads and writes buckets, receipts and scans. Every function takes the SQL runner, so tests can run them on PGlite.
 
 // Both companies' buckets: the review screen and edit dialog can file a receipt at either company.
 export async function listBuckets(sql: Sql): Promise<Bucket[]> {
@@ -88,6 +88,17 @@ export async function updateReceipt(
 export async function deleteReceipt(sql: Sql, id: string): Promise<boolean> {
   const rows = await sql`DELETE FROM receipts WHERE id = ${id}::uuid RETURNING id`;
   return rows.length > 0;
+}
+
+// Long enough to still have the scan when a misread is only noticed as the month is exported.
+const SCAN_RETENTION = "30 days";
+
+// Keeps what Textract returned for a scan, so a field it misread can be traced later by replaying the response
+// through the reader. Scans older than SCAN_RETENTION are deleted in the same statement.
+export async function saveScan(sql: Sql, textract: unknown, imageBytes: number): Promise<void> {
+  await sql`
+    WITH expired AS (DELETE FROM scans WHERE created_at < now() - ${SCAN_RETENTION}::interval)
+    INSERT INTO scans (textract, image_bytes) VALUES (${JSON.stringify(textract)}::jsonb, ${imageBytes})`;
 }
 
 function toReceipt(row: Record<string, unknown>): Receipt {
