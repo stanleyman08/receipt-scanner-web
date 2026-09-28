@@ -163,33 +163,34 @@ describe("editing and deleting receipts", () => {
 });
 
 describe("keeping scans", () => {
-  // A made-up Textract response: only its shape matters here.
+  // A made-up Textract response and photo: only their shape matters here.
   const response = {
     ExpenseDocuments: [{ SummaryFields: [{ Type: { Text: "TOTAL" }, ValueDetection: { Text: "$21.00" } }] }],
   };
+  const photo = (marker: number) => new Uint8Array([0xff, 0xd8, marker, 0xff, 0xd9]);
 
   async function keptScans() {
-    const { rows } = await pg.query<{ textract: unknown; image_bytes: number; days_old: number }>(
-      "SELECT textract, image_bytes, extract(day FROM now() - created_at)::int AS days_old FROM scans ORDER BY created_at",
+    const { rows } = await pg.query<{ textract: unknown; image: Uint8Array; days_old: number }>(
+      "SELECT textract, image, extract(day FROM now() - created_at)::int AS days_old FROM scans ORDER BY created_at",
     );
     return rows;
   }
 
-  it("keeps what Textract returned for a scan, and the size of the photo it read", async () => {
-    await saveScan(sql, response, 48213);
+  it("keeps the photo a scan read and what Textract returned for it", async () => {
+    await saveScan(sql, response, photo(1));
 
-    expect(await keptScans()).toEqual([{ textract: response, image_bytes: 48213, days_old: 0 }]);
+    expect(await keptScans()).toEqual([{ textract: response, image: photo(1), days_old: 0 }]);
   });
 
   it("deletes scans more than 7 days old when saving another, and keeps the rest", async () => {
-    await saveScan(sql, response, 1);
-    await saveScan(sql, response, 2);
-    await pg.exec(`UPDATE scans SET created_at = now() - interval '8 days' WHERE image_bytes = 1;
-      UPDATE scans SET created_at = now() - interval '6 days' WHERE image_bytes = 2`);
+    await saveScan(sql, response, photo(1));
+    await saveScan(sql, response, photo(2));
+    await pg.exec(`UPDATE scans SET created_at = now() - interval '8 days' WHERE get_byte(image, 2) = 1;
+      UPDATE scans SET created_at = now() - interval '6 days' WHERE get_byte(image, 2) = 2`);
 
-    await saveScan(sql, response, 3);
+    await saveScan(sql, response, photo(3));
 
-    expect((await keptScans()).map((scan) => [scan.image_bytes, scan.days_old])).toEqual([
+    expect((await keptScans()).map((scan) => [scan.image[2], scan.days_old])).toEqual([
       [2, 6],
       [3, 0],
     ]);

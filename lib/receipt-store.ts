@@ -93,12 +93,12 @@ export async function deleteReceipt(sql: Sql, id: string): Promise<boolean> {
 // Long enough to report a misread noticed on the review screen, or in the days after.
 const SCAN_RETENTION = "7 days";
 
-// Keeps what Textract returned for a scan, so a field it misread can be traced later by replaying the response
-// through the reader. Scans older than SCAN_RETENTION are deleted in the same statement.
-export async function saveScan(sql: Sql, textract: unknown, imageBytes: number): Promise<void> {
+// Keeps the photo a scan read and what Textract returned for it, so a misread can be traced later: the response
+// replayed through the reader, the photo sent again. Scans older than SCAN_RETENTION are deleted in the same statement.
+export async function saveScan(sql: Sql, textract: unknown, image: Uint8Array): Promise<void> {
   await sql`
     WITH expired AS (DELETE FROM scans WHERE created_at < now() - ${SCAN_RETENTION}::interval)
-    INSERT INTO scans (textract, image_bytes) VALUES (${JSON.stringify(textract)}::jsonb, ${imageBytes})`;
+    INSERT INTO scans (image, textract) VALUES (${image}, ${JSON.stringify(textract)}::jsonb)`;
 }
 
 function toReceipt(row: Record<string, unknown>): Receipt {

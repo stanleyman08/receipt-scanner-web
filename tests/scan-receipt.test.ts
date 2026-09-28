@@ -48,14 +48,14 @@ beforeEach(() => {
 });
 
 describe("scanning a receipt", () => {
-  it("answers with the details read, then keeps what Textract returned and the photo's size", async () => {
+  it("answers with the details read, then keeps the photo and what Textract returned", async () => {
     const response = await scan();
     expect(await response.json()).toEqual({ success: true, details });
     expect(saveScan).not.toHaveBeenCalled();
 
     await runAfterCallbacks();
 
-    expect(saveScan).toHaveBeenCalledWith("sql", textract, photo.length);
+    expect(saveScan).toHaveBeenCalledWith("sql", textract, photo);
   });
 
   it("still answers when keeping the scan fails, and logs why", async () => {
