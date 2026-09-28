@@ -6,9 +6,8 @@ interface SuggestBucketInput {
   receiptDate: string | null;
   /** The bucket selected for the scan, or the receipt's own bucket when editing. */
   selected: BucketKey;
-  /** The bucket the receipt is set to be filed in now. */
-  current: BucketKey;
-  pickedByHand: boolean;
+  /** The bucket picked by hand, if any. */
+  handPicked: BucketKey | null;
 }
 
 // Where a receipt date points: that month, in the selected bucket's category. Without a date, the selected bucket.
@@ -18,15 +17,23 @@ export function bucketForDate(receiptDate: string | null, selected: BucketKey): 
   return { year, month, category: selected.category };
 }
 
-// A receipt follows its receipt date, unless a bucket was picked by hand: that always stays.
-export function suggestBucket({ receiptDate, selected, current, pickedByHand }: SuggestBucketInput): BucketKey {
-  return pickedByHand ? current : bucketForDate(receiptDate, selected);
+// A receipt follows its receipt date, unless a bucket was picked by hand: that always wins.
+export function suggestBucket({ receiptDate, selected, handPicked }: SuggestBucketInput): BucketKey {
+  return handPicked ?? bucketForDate(receiptDate, selected);
+}
+
+// Picking the bucket the receipt date points to means following the date again, so it isn't kept as a hand pick.
+export function handPickFor(picked: BucketKey, suggested: BucketKey): BucketKey | null {
+  return isSameBucket(picked, suggested) ? null : picked;
 }
 
 // A saved receipt filed away from its receipt date's month was put there by hand, so editing the date keeps it there.
 export function isFiledByHand(bucket: BucketKey, receiptDate: string | null): boolean {
-  const dated = bucketForDate(receiptDate, bucket);
-  return dated.year !== bucket.year || dated.month !== bucket.month;
+  return !isSameBucket(bucketForDate(receiptDate, bucket), bucket);
+}
+
+export function isSameBucket(a: BucketKey, b: BucketKey): boolean {
+  return a.year === b.year && a.month === b.month && a.category === b.category;
 }
 
 // Filter receipts by bucket_id

@@ -1,6 +1,6 @@
 "use client";
 
-import { bucketExists, sortBuckets } from "@/lib/bucket";
+import { bucketExists, isSameBucket, sortBuckets } from "@/lib/bucket";
 import { type Bucket, type BucketKey, formatBucketLabel } from "@/types/bucket";
 
 interface BucketPickerProps {
@@ -22,7 +22,7 @@ function optionValue(bucket: BucketKey): string {
 // is created when the receipt is saved.
 export default function BucketPicker({ id, value, suggested, buckets, onChange, className }: BucketPickerProps) {
   const isNew = (bucket: BucketKey) => !bucketExists(buckets, bucket.year, bucket.month, bucket.category);
-  const candidates = optionValue(value) === optionValue(suggested) ? [value] : [value, suggested];
+  const candidates = isSameBucket(value, suggested) ? [value] : [value, suggested];
   const options: BucketKey[] = [...candidates.filter(isNew), ...sortBuckets(buckets)];
 
   return (

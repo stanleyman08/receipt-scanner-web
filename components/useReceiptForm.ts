@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { bucketForDate, suggestBucket } from "@/lib/bucket";
+import { bucketForDate, handPickFor, suggestBucket } from "@/lib/bucket";
 import { centsToInput, parseAmountCents } from "@/lib/money";
 import type { BucketKey } from "@/types/bucket";
 import type { ReceiptReview } from "@/types/capture-flow";
@@ -19,22 +19,19 @@ export function useReceiptForm(initial: ReceiptReview) {
     gst: centsToInput(initial.details.gst_cents),
     total: centsToInput(initial.details.total_cents),
   });
-  const [bucket, setBucket] = useState(initial.bucket);
-  const [pickedByHand, setPickedByHand] = useState(initial.pickedByHand);
   const { selected } = initial;
+  const [handPicked, setHandPicked] = useState<BucketKey | null>(initial.pickedByHand ? initial.bucket : null);
+  const receiptDate = fields.receiptDate || null;
   // Offered in the picker even after another bucket was picked by hand.
-  const suggested = bucketForDate(fields.receiptDate || null, selected);
+  const suggested = bucketForDate(receiptDate, selected);
+  const bucket = suggestBucket({ receiptDate, selected, handPicked });
 
   const setField = (field: ReceiptFormField, value: string) => {
     setFields((prev) => ({ ...prev, [field]: value }));
-    if (field === "receiptDate") {
-      setBucket((current) => suggestBucket({ receiptDate: value || null, selected, current, pickedByHand }));
-    }
   };
 
   const pickBucket = (picked: BucketKey) => {
-    setBucket(picked);
-    setPickedByHand(true);
+    setHandPicked(handPickFor(picked, suggested));
   };
 
   /** The reviewed receipt, or null when an amount that was filled in isn't a plain number. */
@@ -47,14 +44,14 @@ export function useReceiptForm(initial: ReceiptReview) {
     return {
       details: {
         vendor: fields.vendor.trim() || null,
-        receipt_date: fields.receiptDate || null,
+        receipt_date: receiptDate,
         invoice_number: fields.invoiceNumber.trim() || null,
         subtotal_cents: subtotalCents,
         gst_cents: gstCents,
         total_cents: totalCents,
       },
       bucket,
-      pickedByHand,
+      pickedByHand: handPicked !== null,
       selected,
     };
   };

@@ -5,6 +5,7 @@ import {
   getDefaultBucket,
   getUniqueMonthsForYear,
   getUniqueYears,
+  handPickFor,
   isFiledByHand,
   sortBuckets,
   suggestBucket,
@@ -73,28 +74,34 @@ describe("suggestBucket", () => {
   const pickedSupply = { year: 2025, month: 7, category: "Supply" as const };
 
   it("files a receipt under its receipt date's month, in the category it was scanned into", () => {
-    expect(
-      suggestBucket({ receiptDate: "2025-12-30", selected: scanningInto, current: scanningInto, pickedByHand: false }),
-    ).toEqual({ year: 2025, month: 12, category: "Food" });
+    expect(suggestBucket({ receiptDate: "2025-12-30", selected: scanningInto, handPicked: null })).toEqual({
+      year: 2025,
+      month: 12,
+      category: "Food",
+    });
   });
 
-  it("uses the selected bucket when there's no receipt date", () => {
-    expect(
-      suggestBucket({ receiptDate: null, selected: scanningInto, current: scanningInto, pickedByHand: false }),
-    ).toEqual(scanningInto);
-  });
-
-  it("goes back to the selected bucket when a receipt date is cleared", () => {
-    const movedByAWrongDate = { year: 2015, month: 3, category: "Food" as const };
-    expect(
-      suggestBucket({ receiptDate: null, selected: scanningInto, current: movedByAWrongDate, pickedByHand: false }),
-    ).toEqual(scanningInto);
+  it("uses the selected bucket when there's no receipt date, or it was cleared", () => {
+    expect(suggestBucket({ receiptDate: null, selected: scanningInto, handPicked: null })).toEqual(scanningInto);
   });
 
   it("keeps a bucket picked by hand, whatever the receipt date says", () => {
-    expect(
-      suggestBucket({ receiptDate: "2025-12-30", selected: scanningInto, current: pickedSupply, pickedByHand: true }),
-    ).toEqual(pickedSupply);
+    expect(suggestBucket({ receiptDate: "2025-12-30", selected: scanningInto, handPicked: pickedSupply })).toEqual(
+      pickedSupply,
+    );
+  });
+});
+
+describe("handPickFor", () => {
+  const december2025Food = { year: 2025, month: 12, category: "Food" as const };
+  const july2025Supply = { year: 2025, month: 7, category: "Supply" as const };
+
+  it("treats picking the bucket the receipt date points to as following the date again", () => {
+    expect(handPickFor({ ...december2025Food }, december2025Food)).toBeNull();
+  });
+
+  it("keeps a pick of any other bucket", () => {
+    expect(handPickFor(july2025Supply, december2025Food)).toEqual(july2025Supply);
   });
 });
 
@@ -104,6 +111,10 @@ describe("isFiledByHand", () => {
 
   it("counts a receipt filed away from its receipt date's month as picked by hand", () => {
     expect(isFiledByHand(april2026Food, "2026-03-31")).toBe(true);
+  });
+
+  it("counts a receipt filed in the right month of the wrong year as picked by hand", () => {
+    expect(isFiledByHand(march2026Food, "2025-03-31")).toBe(true);
   });
 
   it("doesn't count a receipt filed in its receipt date's month", () => {
