@@ -91,13 +91,20 @@ export async function deleteReceipt(sql: Sql, id: string): Promise<boolean> {
 }
 
 // Long enough to report a misread noticed on the review screen, or in the days after.
-const SCAN_RETENTION = "7 days";
+const SCAN_RETENTION = "3 days";
+// Caps the table on the database's free plan: a busy day can be 100 scans of up to about 400 KB each.
+const MAX_SCANS_KEPT = 300;
 
 // Keeps the photo a scan read and what Textract returned for it, so a misread can be traced later: the response
-// replayed through the reader, the photo sent again. Scans older than SCAN_RETENTION are deleted in the same statement.
+// replayed through the reader, the photo sent again. The same statement deletes scans older than SCAN_RETENTION and
+// any beyond the newest MAX_SCANS_KEPT, counting the new one.
 export async function saveScan(sql: Sql, textract: unknown, image: Uint8Array): Promise<void> {
   await sql`
-    WITH expired AS (DELETE FROM scans WHERE created_at < now() - ${SCAN_RETENTION}::interval)
+    WITH expired AS (
+      DELETE FROM scans
+      WHERE created_at < now() - ${SCAN_RETENTION}::interval
+        OR id NOT IN (SELECT id FROM scans ORDER BY created_at DESC LIMIT ${MAX_SCANS_KEPT - 1})
+    )
     INSERT INTO scans (image, textract) VALUES (${image}, ${JSON.stringify(textract)}::jsonb)`;
 }
 

@@ -182,17 +182,30 @@ describe("keeping scans", () => {
     expect(await keptScans()).toEqual([{ textract: response, image: photo(1), days_old: 0 }]);
   });
 
-  it("deletes scans more than 7 days old when saving another, and keeps the rest", async () => {
+  it("deletes scans more than 3 days old when saving another, and keeps the rest", async () => {
     await saveScan(sql, response, photo(1));
     await saveScan(sql, response, photo(2));
-    await pg.exec(`UPDATE scans SET created_at = now() - interval '8 days' WHERE get_byte(image, 2) = 1;
-      UPDATE scans SET created_at = now() - interval '6 days' WHERE get_byte(image, 2) = 2`);
+    await pg.exec(`UPDATE scans SET created_at = now() - interval '4 days' WHERE get_byte(image, 2) = 1;
+      UPDATE scans SET created_at = now() - interval '2 days' WHERE get_byte(image, 2) = 2`);
 
     await saveScan(sql, response, photo(3));
 
     expect((await keptScans()).map((scan) => [scan.image[2], scan.days_old])).toEqual([
-      [2, 6],
+      [2, 2],
       [3, 0],
     ]);
+  });
+
+  it("keeps only the newest 300 scans, deleting the oldest when saving another", async () => {
+    // 300 scans already kept, a minute apart: scan 300 is the oldest.
+    await pg.exec(`INSERT INTO scans (image, textract, created_at)
+      SELECT '\\xffd8', jsonb_build_object('scan', n), now() - n * interval '1 minute' FROM generate_series(1, 300) AS n`);
+
+    await saveScan(sql, response, photo(1));
+
+    const kept = (await keptScans()).map((scan) => scan.textract);
+    expect(kept).toHaveLength(300);
+    expect(kept).not.toContainEqual({ scan: 300 });
+    expect(kept).toContainEqual({ scan: 299 });
   });
 });
