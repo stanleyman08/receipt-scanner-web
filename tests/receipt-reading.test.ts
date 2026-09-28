@@ -156,6 +156,43 @@ describe("readReceipt", () => {
     expect(fields.invoice_number).toBe("550123");
   });
 
+  describe("vendor rules", () => {
+    const SCANNED_ON = new Date("2026-09-27T12:00:00Z");
+
+    it("takes a Walmart receipt's card approval number as its invoice number", () => {
+      const fields = readReceipt(
+        receipt(
+          field("VENDOR_NAME", "Walmart"),
+          field("INVOICE_RECEIPT_ID", "01234", "TR#"),
+          field("OTHER", "550123", "APPROVAL #"),
+          field("OTHER", "620000000001", "RRN #"),
+        ),
+      );
+      expect(fields.invoice_number).toBe("550123");
+    });
+
+    it.each([
+      ["07/20/26", "2026-07-20"],
+      ["07/05/26", "2026-07-05"],
+      ["07/05/2026", "2026-07-05"],
+      ["26/07/20", "2026-07-20"],
+    ])("reads a Walmart date %s month first when it can be, as %s", (written, date) => {
+      const fields = readReceipt(
+        receipt(field("VENDOR_NAME", "Walmart"), field("INVOICE_RECEIPT_DATE", written)),
+        SCANNED_ON,
+      );
+      expect(fields.receipt_date).toBe(date);
+    });
+
+    it("still leaves another vendor's month-first date blank", () => {
+      const fields = readReceipt(
+        receipt(field("VENDOR_NAME", "Corner Grocery"), field("INVOICE_RECEIPT_DATE", "07/20/26")),
+        SCANNED_ON,
+      );
+      expect(fields.receipt_date).toBeNull();
+    });
+  });
+
   it("leaves an unreadable amount blank", () => {
     expect(readReceipt(receipt(field("TOTAL", "see attached"))).total_cents).toBeNull();
   });
