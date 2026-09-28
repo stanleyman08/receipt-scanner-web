@@ -15,19 +15,51 @@ const TOTAL_TYPES = ["TOTAL", "AMOUNT_DUE", "GRAND_TOTAL"];
 
 /**
  * The details a scan pre-fills from Textract's AnalyzeExpense result. Anything the receipt doesn't show, or that
- * can't be read, stays null for the user to fill in: nothing is worked out or assumed.
+ * can't be read, stays null for the user to fill in: nothing is assumed. The one thing worked out is a receipt that
+ * shows neither a subtotal nor GST, mentions no sales tax, and whose line items add up to its total: nothing else was
+ * charged, so its subtotal is the total and its GST is 0. Had a GST line been missed, the items wouldn't add up to the
+ * total, and prices that include GST, or a GST line read as an item, mention the tax.
  */
 export function readReceipt(document: ExpenseDocument, scannedOn: Date = new Date()): ReceiptDetails {
   const fields = document.SummaryFields ?? [];
+  const subtotalCents = parseAmountCents(valueOfType(fields, SUBTOTAL_TYPES));
+  const gstCents = parseAmountCents(valueOfType(fields, GST_TYPES) ?? valueOfLabel(fields, GST_LABELS, TAX_ID_TYPES));
+  const totalCents = parseAmountCents(valueOfType(fields, TOTAL_TYPES));
+  const isOnlyLineItems =
+    subtotalCents === null &&
+    gstCents === null &&
+    totalCents !== null &&
+    !mentionsSalesTax(document) &&
+    lineItemsCents(document) === totalCents;
 
   return {
     vendor: valueOfType(fields, VENDOR_TYPES),
     receipt_date: parseReceiptDate(valueOfType(fields, DATE_TYPES), scannedOn),
     invoice_number: valueOfLabel(fields, INVOICE_LABELS) ?? valueOfType(fields, INVOICE_TYPES),
-    subtotal_cents: parseAmountCents(valueOfType(fields, SUBTOTAL_TYPES)),
-    gst_cents: parseAmountCents(valueOfType(fields, GST_TYPES) ?? valueOfLabel(fields, GST_LABELS, TAX_ID_TYPES)),
-    total_cents: parseAmountCents(valueOfType(fields, TOTAL_TYPES)),
+    subtotal_cents: isOnlyLineItems ? totalCents : subtotalCents,
+    gst_cents: isOnlyLineItems ? 0 : gstCents,
+    total_cents: totalCents,
   };
+}
+
+const SALES_TAX = /\b(GST|HST|PST|QST|tax(es)?)\b/i;
+// A business number, as in "GST # 81234-5678 RT0001": the line registers the vendor for GST, and says nothing of a charge.
+const BUSINESS_NUMBER = /\d{5}[\s-]?\d{4}/;
+
+/** Whether any line Textract read mentions a sales tax, other than the vendor's GST registration number. */
+function mentionsSalesTax(document: ExpenseDocument): boolean {
+  return (document.Blocks ?? []).some(
+    (block) =>
+      block.BlockType === "LINE" && SALES_TAX.test(block.Text ?? "") && !BUSINESS_NUMBER.test(block.Text ?? ""),
+  );
+}
+
+/** What the line items' printed amounts add up to, or null when there are none or one can't be read. */
+function lineItemsCents(document: ExpenseDocument): number | null {
+  const items = (document.LineItemGroups ?? []).flatMap((group) => group.LineItems ?? []);
+  const amounts = items.map((item) => parseAmountCents(valueOfType(item.LineItemExpenseFields ?? [], ["PRICE"])));
+  if (amounts.length === 0 || amounts.includes(null)) return null;
+  return amounts.reduce<number>((sum, cents) => sum + (cents ?? 0), 0);
 }
 
 /** The first field matching the given types, in priority order. */
