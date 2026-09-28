@@ -112,6 +112,9 @@ export default function CameraCapture({
           audio={false}
           ref={webcamRef}
           screenshotFormat="image/jpeg"
+          // Capture at the camera's resolution. Otherwise the photo is only as wide as the screen (about 400 px on a
+          // phone), too small for Textract to read a receipt's small print.
+          forceScreenshotSourceSize
           videoConstraints={videoConstraints}
           onUserMediaError={handleCameraError}
           className="flex-1 object-cover w-full h-full"
