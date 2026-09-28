@@ -7,7 +7,7 @@ A web application for scanning receipts using your phone's camera. It reads each
 - Two companies, Carino and Peko Peko, each with its own buckets, receipts and exports, and a switcher at the top
 - Scan receipts using your device's camera, or upload a photo
 - Automatic data extraction (vendor, date, subtotal, GST, total, invoice number)
-- What Textract returned for each scan is kept for 45 days, so a misread field can be traced
+- What Textract returned for each scan is kept for 7 days, so a misread field can be traced
 - Receipts filed into the bucket for their date, with pickers to choose another bucket or the other company
 - One shared account for everyone at both companies, with sign-in attempts rate-limited
 - Export a bucket, or a company's whole year, to Excel
@@ -96,7 +96,7 @@ Lefthook runs Biome on staged files before each commit, and the tests and type c
 
 ## Tracing a misread
 
-When a scan reads a field wrong, what Textract returned for it is in the `scans` table for 45 days, with the size of the photo it read (`image_bytes`). Find the scan by the time the receipt was saved, and replay it through `readReceipt` in `lib/receipt-reading.ts` to see why: pass it `textract.ExpenseDocuments[0]`, and the scan's `created_at` as the scan date, since dates are read relative to it. Older scans are deleted each time a new one is kept. The column holds everything printed on the receipt, so keep it out of the repo, which is public.
+When a scan reads a field wrong, what Textract returned for it is in the `scans` table for 7 days, with the size of the photo it read (`image_bytes`). Find the scan by the time the receipt was saved, and replay it through `readReceipt` in `lib/receipt-reading.ts` to see why: pass it `textract.ExpenseDocuments[0]`, and the scan's `created_at` as the scan date, since dates are read relative to it. Older scans are deleted each time a new one is kept. The column holds everything printed on the receipt, so keep it out of the repo, which is public.
 
 ## Tech Stack
 

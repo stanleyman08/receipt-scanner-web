@@ -90,8 +90,8 @@ export async function deleteReceipt(sql: Sql, id: string): Promise<boolean> {
   return rows.length > 0;
 }
 
-// Long enough to still have a scan from early in a month when the month is exported, a few days after it ends.
-const SCAN_RETENTION = "45 days";
+// Long enough to report a misread noticed on the review screen, or in the days after.
+const SCAN_RETENTION = "7 days";
 
 // Keeps what Textract returned for a scan, so a field it misread can be traced later by replaying the response
 // through the reader. Scans older than SCAN_RETENTION are deleted in the same statement.

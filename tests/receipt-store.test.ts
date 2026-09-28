@@ -181,16 +181,16 @@ describe("keeping scans", () => {
     expect(await keptScans()).toEqual([{ textract: response, image_bytes: 48213, days_old: 0 }]);
   });
 
-  it("deletes scans more than 45 days old when saving another, and keeps the rest", async () => {
+  it("deletes scans more than 7 days old when saving another, and keeps the rest", async () => {
     await saveScan(sql, response, 1);
     await saveScan(sql, response, 2);
-    await pg.exec(`UPDATE scans SET created_at = now() - interval '46 days' WHERE image_bytes = 1;
-      UPDATE scans SET created_at = now() - interval '44 days' WHERE image_bytes = 2`);
+    await pg.exec(`UPDATE scans SET created_at = now() - interval '8 days' WHERE image_bytes = 1;
+      UPDATE scans SET created_at = now() - interval '6 days' WHERE image_bytes = 2`);
 
     await saveScan(sql, response, 3);
 
     expect((await keptScans()).map((scan) => [scan.image_bytes, scan.days_old])).toEqual([
-      [2, 44],
+      [2, 6],
       [3, 0],
     ]);
   });
