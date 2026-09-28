@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { createBucketAction, deleteReceiptAction, saveReceiptAction, updateReceiptAction } from "@/app/actions";
+import { auth } from "@/lib/auth";
 import type { ReceiptDetails } from "@/types/receipt";
 
-// Mocked at the boundaries: Better Auth finds no session, and the database fails the test if it's reached.
+// Mocked at the boundaries: Better Auth finds no session unless a test signs in, and the database fails the test if
+// it's reached.
 const { getSql } = vi.hoisted(() => ({ getSql: vi.fn() }));
 vi.mock("@/lib/db/sql", () => ({ getSql }));
 vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: vi.fn(async () => null) } } }));
@@ -27,6 +29,20 @@ describe("server actions without a signed-in session", () => {
     ["deleteReceiptAction", () => deleteReceiptAction(receiptId)],
   ])("%s refuses and never touches the database", async (_name, run) => {
     await expect(run()).resolves.toEqual({ ok: false, error: expect.stringContaining("Sign in") });
+    expect(getSql).not.toHaveBeenCalled();
+  });
+});
+
+describe("server actions with a signed-in session", () => {
+  // One cent more than the database's integer amount columns can hold ($21,474,836.47).
+  const tooLarge: ReceiptDetails = { ...details, total_cents: 2_147_483_648 };
+
+  it.each([
+    ["saveReceiptAction", () => saveReceiptAction(tooLarge, bucket)],
+    ["updateReceiptAction", () => updateReceiptAction(receiptId, tooLarge, bucket)],
+  ])("%s refuses an amount too large to store, before touching the database", async (_name, run) => {
+    vi.mocked(auth.api.getSession).mockResolvedValueOnce({ session: {}, user: {} } as never);
+    await expect(run()).resolves.toEqual({ ok: false, error: expect.stringContaining("details look wrong") });
     expect(getSql).not.toHaveBeenCalled();
   });
 });

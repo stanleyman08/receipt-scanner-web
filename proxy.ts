@@ -12,6 +12,12 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Everything except the sign-in page, API routes (they check the session themselves) and static files.
-  matcher: ["/((?!login|api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: [
+    {
+      // Everything except the sign-in page, API routes (they check the session themselves) and static files.
+      source: "/((?!login|api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+      // Server actions check the session themselves and answer "Your session has ended"; a redirect would break that.
+      missing: [{ type: "header", key: "next-action" }],
+    },
+  ],
 };

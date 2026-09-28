@@ -23,7 +23,7 @@ interface EditScreenProps {
 
 export default function EditScreen({ imageData, review, buckets, error, onConfirm, onRetake }: EditScreenProps) {
   const idPrefix = useId();
-  const { fields, setField, bucket, pickBucket, toReview } = useReceiptForm(review);
+  const { fields, setField, bucket, suggested, pickBucket, toReview } = useReceiptForm(review);
   const [amountError, setAmountError] = useState<string | null>(null);
   const [showFullImage, setShowFullImage] = useState(false);
 
@@ -190,6 +190,7 @@ export default function EditScreen({ imageData, review, buckets, error, onConfir
                 <BucketPicker
                   id={`${idPrefix}-bucket`}
                   value={bucket}
+                  suggested={suggested}
                   buckets={buckets}
                   onChange={pickBucket}
                   className={INPUT_CLASS}

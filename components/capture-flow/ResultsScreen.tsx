@@ -1,16 +1,19 @@
 "use client";
 
 import { formatCents } from "@/lib/money";
+import { type BucketKey, formatBucketLabel } from "@/types/bucket";
 import { formatReceiptDate, type Receipt } from "@/types/receipt";
 
 interface ResultsScreenProps {
   imageData: string;
   receipt: Receipt;
+  /** The bucket the receipt was filed into, which can differ from the one selected when scanning. */
+  bucket: BucketKey;
   onSave: () => void;
   onScanAnother: () => void;
 }
 
-export default function ResultsScreen({ imageData, receipt, onSave, onScanAnother }: ResultsScreenProps) {
+export default function ResultsScreen({ imageData, receipt, bucket, onSave, onScanAnother }: ResultsScreenProps) {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
     return formatReceiptDate(dateStr);
@@ -18,7 +21,7 @@ export default function ResultsScreen({ imageData, receipt, onSave, onScanAnothe
 
   return (
     <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4 animate-fade-in">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Success header */}
         <div className="flex flex-col items-center mb-6">
           <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center mb-4 animate-scale-in">
@@ -33,6 +36,7 @@ export default function ResultsScreen({ imageData, receipt, onSave, onScanAnothe
             </svg>
           </div>
           <h2 className="text-xl font-semibold text-white">Receipt Scanned!</h2>
+          <p className="text-sm text-gray-400 mt-1">Filed into {formatBucketLabel(bucket)}</p>
         </div>
 
         {/* Receipt card */}

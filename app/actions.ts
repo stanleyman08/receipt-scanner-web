@@ -24,7 +24,8 @@ const bucketKeySchema = z.object({
   month: z.number().int().min(1).max(12),
   category: z.enum(BUCKET_CATEGORIES),
 });
-const cents = z.number().int().nullable();
+// The amount columns are Postgres integers, so anything outside that range is refused here rather than failing there.
+const cents = z.int32().nullable();
 const receiptDetailsSchema = z.object({
   vendor: z.string().max(MAX_VENDOR_LENGTH).nullable(),
   receipt_date: z.iso.date().nullable(),
