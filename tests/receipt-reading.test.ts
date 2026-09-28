@@ -15,6 +15,18 @@ function receipt(...fields: ExpenseField[]): ExpenseDocument {
   return { SummaryFields: fields };
 }
 
+/**
+ * A receipt with line items, each given by its printed line amount (or undefined when it has none), and the lines of
+ * text Textract read on it.
+ */
+function receiptWithItems(prices: (string | undefined)[], lines: string[], ...fields: ExpenseField[]): ExpenseDocument {
+  const lineItems = prices.map((price) => ({
+    LineItemExpenseFields: [field("ITEM", "Made-up item"), ...(price === undefined ? [] : [field("PRICE", price)])],
+  }));
+  const blocks = lines.map((text) => ({ BlockType: "LINE" as const, Text: text }));
+  return { SummaryFields: fields, LineItemGroups: [{ LineItems: lineItems }], Blocks: blocks };
+}
+
 describe("readReceipt", () => {
   it("reads the vendor, receipt date, invoice number and amounts of a typical receipt", () => {
     const fields = readReceipt(
@@ -99,6 +111,25 @@ describe("readReceipt", () => {
   it("leaves the subtotal blank when the receipt doesn't show one", () => {
     const fields = readReceipt(receipt(field("TAX", "$0.50"), field("TOTAL", "$10.50")));
     expect(fields).toMatchObject({ subtotal_cents: null, gst_cents: 50, total_cents: 1050 });
+  });
+
+  it("takes the total as the subtotal, and no GST, when there's neither and the line items add up to the total", () => {
+    // A GST registration number is printed on most receipts, and doesn't mean GST was charged.
+    const lines = ["Made-up Supplier Ltd", "GST # 81234-5678 RT0001", "Total $425.50"];
+    const fields = readReceipt(receiptWithItems(["300.00", "$125.50"], lines, field("TOTAL", "$425.50")));
+    expect(fields).toMatchObject({ subtotal_cents: 42550, gst_cents: 0, total_cents: 42550 });
+  });
+
+  it.each([
+    ["the line items don't add up to the total, as when a GST line was missed", ["300.00", "100.00"], [], "$420.00"],
+    ["a line item has no amount it can read", ["300.00", undefined], [], "$300.00"],
+    ["the receipt has no line items", [], [], "$0.00"],
+    ["the prices include GST", ["60.00"], ["Fuel 60.00", "Prices include GST"], "$60.00"],
+    ["the GST line was read as a line item", ["100.00", "5.00"], ["Item 100.00", "GST 5% 5.00"], "$105.00"],
+    ["the receipt shows another sales tax", ["100.00"], ["Item 100.00", "HST incl."], "$100.00"],
+  ])("leaves the subtotal and GST blank when %s", (_case, prices, lines, total) => {
+    const fields = readReceipt(receiptWithItems(prices, lines, field("TOTAL", total)));
+    expect(fields).toMatchObject({ subtotal_cents: null, gst_cents: null });
   });
 
   it("leaves GST blank when the receipt doesn't show it", () => {
