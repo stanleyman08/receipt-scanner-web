@@ -1,6 +1,6 @@
 # Receipt Scanner
 
-A web application for scanning receipts using your phone's camera. It reads each receipt with AWS Textract, files it into a bucket (one category for one month), and exports a bucket or a whole year to Excel. Built with Next.js 16, React 19, Neon Postgres and Better Auth.
+A web application for scanning receipts using your phone's camera. It reads each receipt with AWS Textract, files it into a bucket (one category for one month of one company), and exports a bucket or a whole year to Excel. Built with Next.js 16, React 19, Neon Postgres and Better Auth.
 
 ## Features
 
