@@ -51,6 +51,12 @@ export function filterBucketsByCompany(buckets: Bucket[], company: Company): Buc
   return buckets.filter((bucket) => bucket.company === company);
 }
 
+// Adds the bucket a receipt was just filed into, if saving it created that bucket. The id is always the server's.
+export function withBucket(buckets: Bucket[], id: string, key: BucketKey, createdAt: string): Bucket[] {
+  if (buckets.some((bucket) => bucket.id === id)) return buckets;
+  return [...buckets, { ...toBucketKey(key), id, created_at: createdAt }];
+}
+
 // Filter receipts by bucket_id
 export function filterByBucket(receipts: Receipt[], bucketId: string): Receipt[] {
   return receipts.filter((r) => r.bucket_id === bucketId);

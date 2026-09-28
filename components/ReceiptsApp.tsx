@@ -31,16 +31,11 @@ import {
   getUniqueYears,
   sortBuckets,
   toBucketKey,
+  withBucket,
 } from "@/lib/bucket";
 import { downloadYearExcel } from "@/lib/excel";
 import { optimizeImageForOCR } from "@/lib/image-utils";
-import {
-  type Bucket,
-  type BucketCategory,
-  type BucketKey,
-  formatBucketLabel,
-  formatBucketWithCompany,
-} from "@/types/bucket";
+import { type Bucket, type BucketCategory, formatBucketLabel, formatBucketWithCompany } from "@/types/bucket";
 import type { CaptureFlowState, ProcessingStage, ReceiptReview } from "@/types/capture-flow";
 import type { Company } from "@/types/company";
 import type { Receipt, ScanResponse } from "@/types/receipt";
@@ -60,11 +55,6 @@ interface ReceiptsAppProps {
   initialBuckets: Bucket[];
   /** This company's receipts. */
   initialReceipts: Receipt[];
-}
-
-// Adds the bucket a receipt was just filed into, if saving it created that bucket.
-function withBucket(buckets: Bucket[], id: string, key: BucketKey, createdAt: string): Bucket[] {
-  return buckets.some((bucket) => bucket.id === id) ? buckets : [...buckets, { id, ...key, created_at: createdAt }];
 }
 
 export default function ReceiptsApp({ company, initialBuckets, initialReceipts }: ReceiptsAppProps) {
@@ -148,8 +138,8 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
 
   const handleExportYear = async () => {
     if (selectedYear === null) return;
-    const yearReceipts = filterReceiptsByYear(receipts, buckets, selectedYear);
-    const bucketMap = new Map(buckets.map((b) => [b.id, b]));
+    const yearReceipts = filterReceiptsByYear(receipts, companyBuckets, selectedYear);
+    const bucketMap = new Map(companyBuckets.map((b) => [b.id, b]));
     await downloadYearExcel(yearReceipts, bucketMap, selectedYear, company);
   };
 
@@ -314,7 +304,7 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
     setCaptureState({ status: "camera_active" });
   };
 
-  // Success handlers (the receipt is already in the list)
+  // Success handlers (saving already added the receipt to the list, unless it went to the other company)
   const handleDone = () => {
     showSuccess("Receipt saved.");
     setCaptureState({ status: "idle" });

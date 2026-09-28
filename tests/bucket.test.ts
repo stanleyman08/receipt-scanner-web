@@ -12,6 +12,7 @@ import {
   sortBuckets,
   suggestBucket,
   toBucketKey,
+  withBucket,
 } from "@/lib/bucket";
 import type { Bucket, BucketCategory } from "@/types/bucket";
 import type { Company } from "@/types/company";
@@ -101,6 +102,31 @@ describe("filterBucketsByCompany", () => {
   it("lists one company's buckets", () => {
     const pekoPekoJanuary = bucket("peko-peko-2026-01-food", 2026, 1, "Food", "Peko Peko");
     expect(filterBucketsByCompany([...buckets, pekoPekoJanuary], "Peko Peko")).toEqual([pekoPekoJanuary]);
+  });
+});
+
+describe("withBucket", () => {
+  const filedAt = "2026-02-01T00:00:00Z";
+
+  it("adds a bucket that saving created under the id the server gave it, whatever the key carries", () => {
+    // The edit dialog starts from the receipt's own bucket, so a key for the other company can carry that bucket's id.
+    const movedToPekoPeko = { ...january2026Food, company: "Peko Peko" as const };
+    const added = withBucket(buckets, "peko-peko-2026-01-food", movedToPekoPeko, filedAt);
+    expect(added).toEqual([
+      ...buckets,
+      {
+        id: "peko-peko-2026-01-food",
+        company: "Peko Peko",
+        year: 2026,
+        month: 1,
+        category: "Food",
+        created_at: filedAt,
+      },
+    ]);
+  });
+
+  it("leaves the list as it is when the bucket was already there", () => {
+    expect(withBucket(buckets, january2026Food.id, january2026Food, filedAt)).toBe(buckets);
   });
 });
 
