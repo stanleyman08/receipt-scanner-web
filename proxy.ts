@@ -5,10 +5,6 @@ import { type NextRequest, NextResponse } from "next/server";
 // server actions and API routes verify the session against the database. It never redirects away from /login on
 // the cookie alone, since a stale cookie would then bounce between the two pages.
 export function proxy(request: NextRequest) {
-  // Server actions check the session themselves and answer "Your session has ended"; a redirect would break that.
-  if (request.method === "POST" && request.headers.has("next-action")) {
-    return NextResponse.next();
-  }
   if (!getSessionCookie(request)) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
@@ -16,6 +12,12 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Everything except the sign-in page, API routes (they check the session themselves) and static files.
-  matcher: ["/((?!login|api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: [
+    {
+      // Everything except the sign-in page, API routes (they check the session themselves) and static files.
+      source: "/((?!login|api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+      // Server actions check the session themselves and answer "Your session has ended"; a redirect would break that.
+      missing: [{ type: "header", key: "next-action" }],
+    },
+  ],
 };
