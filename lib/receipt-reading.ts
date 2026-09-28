@@ -13,6 +13,19 @@ const GST_LABELS = ["GST", "TAX"];
 const TAX_ID_TYPES = ["TAX_PAYER_ID", "VENDOR_GST_NUMBER", "GST_NUMBER", "TAX_ID"];
 const TOTAL_TYPES = ["TOTAL", "AMOUNT_DUE", "GRAND_TOTAL"];
 
+/** How one vendor prints its receipts, where the general rules would read them differently. */
+interface VendorRule {
+  /** Matches the vendor's name as Textract reads it. */
+  vendor: RegExp;
+  /** Labels of the number kept as the invoice number, a unique ID for matching the receipt; tried first. */
+  invoiceLabels: string[];
+  /** Whether its all-number dates are printed month first, as 07/20/26 is 20 July 2026. */
+  isMonthFirst: boolean;
+}
+
+// Vendors whose receipts come in often. Superstore's card "Ref. #" and a supplier's "Invoice #" already read right.
+const VENDOR_RULES: VendorRule[] = [{ vendor: /walmart/i, invoiceLabels: ["APPROVAL #"], isMonthFirst: true }];
+
 /**
  * The details a scan pre-fills from Textract's AnalyzeExpense result. Anything the receipt doesn't show, or that
  * can't be read, stays null for the user to fill in: nothing is assumed. The one thing worked out is a receipt that
@@ -22,6 +35,8 @@ const TOTAL_TYPES = ["TOTAL", "AMOUNT_DUE", "GRAND_TOTAL"];
  */
 export function readReceipt(document: ExpenseDocument, scannedOn: Date = new Date()): ReceiptDetails {
   const fields = document.SummaryFields ?? [];
+  const vendor = valueOfType(fields, VENDOR_TYPES);
+  const rule = VENDOR_RULES.find((candidate) => vendor !== null && candidate.vendor.test(vendor));
   const subtotalCents = parseAmountCents(valueOfType(fields, SUBTOTAL_TYPES));
   const gstCents = parseAmountCents(valueOfType(fields, GST_TYPES) ?? valueOfLabel(fields, GST_LABELS, TAX_ID_TYPES));
   const totalCents = parseAmountCents(valueOfType(fields, TOTAL_TYPES));
@@ -33,9 +48,12 @@ export function readReceipt(document: ExpenseDocument, scannedOn: Date = new Dat
     lineItemsCents(document) === totalCents;
 
   return {
-    vendor: valueOfType(fields, VENDOR_TYPES),
-    receipt_date: parseReceiptDate(valueOfType(fields, DATE_TYPES), scannedOn),
-    invoice_number: valueOfLabel(fields, INVOICE_LABELS) ?? valueOfType(fields, INVOICE_TYPES),
+    vendor,
+    receipt_date: parseReceiptDate(valueOfType(fields, DATE_TYPES), scannedOn, rule?.isMonthFirst ?? false),
+    invoice_number:
+      valueOfLabel(fields, rule?.invoiceLabels ?? []) ??
+      valueOfLabel(fields, INVOICE_LABELS) ??
+      valueOfType(fields, INVOICE_TYPES),
     subtotal_cents: isOnlyLineItems ? totalCents : subtotalCents,
     gst_cents: isOnlyLineItems ? 0 : gstCents,
     total_cents: totalCents,
@@ -102,6 +120,8 @@ const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "
 const CENTURY = 2000;
 // Year first, the order receipts use: 2026-03-28, 2026/3/8, 2026.03.28, or a two-digit year like 26/03/28.
 const YEAR_FIRST = /^(\d{4}|\d{2})[-/.](\d{1,2})[-/.](\d{1,2})$/;
+// Month first, read only for a vendor known to print it: 07/20/26 or 07/20/2026.
+const MONTH_FIRST = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4}|\d{2})$/;
 // A month name makes the order unambiguous: "Mar 28, 2026" or "28 March 2026" / "28-Mar-26".
 const MONTH_NAME_THEN_DAY = /^([a-z]{3,})\.?[\s-]+(\d{1,2}),?[\s-]+(\d{4}|\d{2})$/i;
 const DAY_THEN_MONTH_NAME = /^(\d{1,2})[\s-]+([a-z]{3,})\.?,?[\s-]+(\d{4}|\d{2})$/i;
@@ -109,12 +129,25 @@ const DAY_THEN_MONTH_NAME = /^(\d{1,2})[\s-]+([a-z]{3,})\.?,?[\s-]+(\d{4}|\d{2})
 const LEADING_WEEKDAY = /^(mon|tue|wed|thu|fri|sat|sun)[a-z]*\.?,?\s+/i;
 const TRAILING_TIME = /,?\s+\d{1,2}:\d{2}(:\d{2})?(\s*[ap]\.?m\.?)?$/i;
 
-// Numeric dates in any other order (28/03/2026, 03/28/2026) are ambiguous, so they stay blank. So does a date after
-// the scan, which can only be a misread.
-function parseReceiptDate(value: string | null, scannedOn: Date): string | null {
+// Numeric dates in any other order (28/03/2026, 03/28/2026) are ambiguous, so they stay blank, unless the vendor is
+// known to print them month first. So does a date after the scan, which can only be a misread.
+function parseReceiptDate(value: string | null, scannedOn: Date, isMonthFirst: boolean): string | null {
   if (!value) return null;
-  const date = readDate(value.trim().replace(LEADING_WEEKDAY, "").replace(TRAILING_TIME, ""), scannedOn);
+  const text = value.trim().replace(LEADING_WEEKDAY, "").replace(TRAILING_TIME, "");
+  const date = isMonthFirst ? readMonthFirstDate(text, scannedOn) : readDate(text, scannedOn);
   return date !== null && date <= scanDate(scannedOn) ? date : null;
+}
+
+// Month first when that makes a date, as 07/20/26; otherwise read as any other vendor's, as 26/07/20 year first is.
+function readMonthFirstDate(text: string, scannedOn: Date): string | null {
+  const monthFirst = MONTH_FIRST.exec(text);
+  if (monthFirst) {
+    const [, month, day, year] = monthFirst;
+    const date =
+      year.length === 4 ? toIsoDate(Number(year), Number(month), Number(day)) : recentDate(year, month, day, scannedOn);
+    if (date !== null) return date;
+  }
+  return readDate(text, scannedOn);
 }
 
 function readDate(text: string, scannedOn: Date): string | null {
