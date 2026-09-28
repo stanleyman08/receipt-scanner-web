@@ -41,6 +41,9 @@ describe("readReceipt", () => {
   it.each([
     ["$1,234.56", 123456],
     ["CAD$ 60.00", 6000],
+    ["CA$12.00", 1200],
+    ["US$ 7.50", 750],
+    ["CA $12.00", 1200],
     ["USD 7.5", 750],
     ["10. 58", 1058],
     ["60", 6000],
@@ -48,30 +51,49 @@ describe("readReceipt", () => {
     expect(readReceipt(receipt(field("TOTAL", written))).total_cents).toBe(cents);
   });
 
+  // A two-digit year is only trusted near the day of the scan, so the date tests pin that day.
+  const SCANNED_ON = new Date("2026-09-27T12:00:00Z");
+  function readDate(written: string) {
+    return readReceipt(receipt(field("INVOICE_RECEIPT_DATE", written)), SCANNED_ON).receipt_date;
+  }
+
   it.each([
     ["2026-03-28", "2026-03-28"],
+    ["2024-11-05", "2024-11-05"],
     ["2026/03/28", "2026-03-28"],
     ["2026.03.28", "2026-03-28"],
     ["2026-3-8", "2026-03-08"],
     ["26/03/28", "2026-03-28"],
+    ["25/12/31", "2025-12-31"],
     ["Mar 28, 2026", "2026-03-28"],
     ["March 28 2026", "2026-03-28"],
     ["28 Mar 2026", "2026-03-28"],
     ["28-Mar-2026", "2026-03-28"],
     ["28-Mar-26", "2026-03-28"],
     ["Mar 28, 26", "2026-03-28"],
+    ["2026-03-28 14:32", "2026-03-28"],
+    ["2026/03/28 2:32 PM", "2026-03-28"],
+    ["Mar 28, 2026, 2:32 PM", "2026-03-28"],
+    ["Sat, Mar 28, 2026", "2026-03-28"],
+    ["Saturday 28 March 2026", "2026-03-28"],
   ])("reads the receipt date %s as %s", (written, date) => {
-    expect(readReceipt(receipt(field("INVOICE_RECEIPT_DATE", written))).receipt_date).toBe(date);
+    expect(readDate(written)).toBe(date);
   });
 
   it.each([
     ["28/03/2026", "day first"],
     ["03/28/2026", "month first"],
+    ["27/09/26", "a two-digit year that would be next year"],
+    ["15/04/26", "a two-digit year from years ago"],
+    ["25/09/26", "a two-digit date that could just as well be day first"],
+    ["25/09/26 14:32", "the same with a time"],
+    ["2026-12-01", "a date after the scan"],
+    ["28-Mar-35", "a two-digit year far in the future"],
     ["2026-02-30", "a day that doesn't exist"],
     ["2026-13-01", "a month that doesn't exist"],
     ["next Tuesday", "words"],
   ])("leaves the receipt date %s blank (%s)", (written) => {
-    expect(readReceipt(receipt(field("INVOICE_RECEIPT_DATE", written))).receipt_date).toBeNull();
+    expect(readDate(written)).toBeNull();
   });
 
   it("leaves the subtotal blank when the receipt doesn't show one", () => {
@@ -98,5 +120,9 @@ describe("readReceipt", () => {
 
   it("leaves an unreadable amount blank", () => {
     expect(readReceipt(receipt(field("TOTAL", "see attached"))).total_cents).toBeNull();
+  });
+
+  it("leaves an amount too large to store blank, such as a registration number read as the total", () => {
+    expect(readReceipt(receipt(field("TOTAL", "812345678.00"))).total_cents).toBeNull();
   });
 });

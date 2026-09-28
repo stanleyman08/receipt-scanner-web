@@ -12,6 +12,7 @@ import ExportButton from "@/components/ExportButton";
 import ReceiptTable from "@/components/ReceiptTable";
 import { authClient } from "@/lib/auth-client";
 import {
+  bucketForDate,
   filterBucketsByYearMonth,
   filterByBucket,
   filterReceiptsByYear,
@@ -21,7 +22,6 @@ import {
   getUniqueMonthsForYear,
   getUniqueYears,
   sortBuckets,
-  suggestBucket,
 } from "@/lib/bucket";
 import { downloadYearExcel } from "@/lib/excel";
 import { optimizeImageForOCR } from "@/lib/image-utils";
@@ -204,15 +204,11 @@ export default function ReceiptsApp({ initialBuckets, initialReceipts }: Receipt
 
       if (result.success) {
         // File the receipt under its receipt date's month, in the category being scanned into
-        const bucket = suggestBucket({
-          receiptDate: result.details.receipt_date,
-          current: scanningInto,
-          pickedByHand: false,
-        });
+        const bucket = bucketForDate(result.details.receipt_date, scanningInto);
         setCaptureState({
           status: "editing",
           imageData,
-          review: { details: result.details, bucket, pickedByHand: false },
+          review: { details: result.details, bucket, pickedByHand: false, selected: scanningInto },
         });
       } else {
         setCaptureState({ status: "error", imageData, error: result.error });
@@ -237,7 +233,7 @@ export default function ReceiptsApp({ initialBuckets, initialReceipts }: Receipt
       const receipt = result.value;
       setReceipts((prev) => [receipt, ...prev]);
       setBuckets((prev) => withBucket(prev, receipt.bucket_id, review.bucket, receipt.created_at));
-      setCaptureState({ status: "success", imageData, receipt });
+      setCaptureState({ status: "success", imageData, receipt, bucket: review.bucket });
     } catch {
       setCaptureState({ status: "editing", imageData, review, error: SAVE_FAILED });
     }
@@ -563,6 +559,7 @@ export default function ReceiptsApp({ initialBuckets, initialReceipts }: Receipt
         <ResultsScreen
           imageData={captureState.imageData}
           receipt={captureState.receipt}
+          bucket={captureState.bucket}
           onSave={handleDone}
           onScanAnother={handleScanAnother}
         />

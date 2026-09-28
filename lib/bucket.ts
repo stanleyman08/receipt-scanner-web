@@ -4,16 +4,36 @@ import type { Receipt } from "@/types/receipt";
 interface SuggestBucketInput {
   /** YYYY-MM-DD, or null when the receipt has no readable date. */
   receiptDate: string | null;
-  /** The bucket being scanned into, or the receipt's own bucket when editing. */
-  current: BucketKey;
-  pickedByHand: boolean;
+  /** The bucket selected for the scan, or the receipt's own bucket when editing. */
+  selected: BucketKey;
+  /** The bucket picked by hand, if any. */
+  handPicked: BucketKey | null;
 }
 
-// A receipt belongs in its receipt date's month, in the current category, unless a bucket was picked by hand.
-export function suggestBucket({ receiptDate, current, pickedByHand }: SuggestBucketInput): BucketKey {
-  if (pickedByHand || !receiptDate) return current;
+// Where a receipt date points: that month, in the selected bucket's category. Without a date, the selected bucket.
+export function bucketForDate(receiptDate: string | null, selected: BucketKey): BucketKey {
+  if (!receiptDate) return selected;
   const [year, month] = receiptDate.split("-").map(Number);
-  return { year, month, category: current.category };
+  return { year, month, category: selected.category };
+}
+
+// A receipt follows its receipt date, unless a bucket was picked by hand: that always wins.
+export function suggestBucket({ receiptDate, selected, handPicked }: SuggestBucketInput): BucketKey {
+  return handPicked ?? bucketForDate(receiptDate, selected);
+}
+
+// Picking the bucket the receipt date points to means following the date again, so it isn't kept as a hand pick.
+export function handPickFor(picked: BucketKey, suggested: BucketKey): BucketKey | null {
+  return isSameBucket(picked, suggested) ? null : picked;
+}
+
+// A saved receipt filed away from its receipt date's month was put there by hand, so editing the date keeps it there.
+export function isFiledByHand(bucket: BucketKey, receiptDate: string | null): boolean {
+  return !isSameBucket(bucketForDate(receiptDate, bucket), bucket);
+}
+
+export function isSameBucket(a: BucketKey, b: BucketKey): boolean {
+  return a.year === b.year && a.month === b.month && a.category === b.category;
 }
 
 // Filter receipts by bucket_id

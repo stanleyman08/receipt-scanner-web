@@ -5,6 +5,8 @@ import {
   getDefaultBucket,
   getUniqueMonthsForYear,
   getUniqueYears,
+  handPickFor,
+  isFiledByHand,
   sortBuckets,
   suggestBucket,
 } from "@/lib/bucket";
@@ -69,22 +71,57 @@ describe("sidebar lists", () => {
 
 describe("suggestBucket", () => {
   const scanningInto = { year: 2026, month: 1, category: "Food" as const };
+  const pickedSupply = { year: 2025, month: 7, category: "Supply" as const };
 
   it("files a receipt under its receipt date's month, in the category it was scanned into", () => {
-    expect(suggestBucket({ receiptDate: "2025-12-30", current: scanningInto, pickedByHand: false })).toEqual({
+    expect(suggestBucket({ receiptDate: "2025-12-30", selected: scanningInto, handPicked: null })).toEqual({
       year: 2025,
       month: 12,
       category: "Food",
     });
   });
 
-  it("keeps the current bucket when there's no receipt date", () => {
-    expect(suggestBucket({ receiptDate: null, current: scanningInto, pickedByHand: false })).toEqual(scanningInto);
+  it("uses the selected bucket when there's no receipt date, or it was cleared", () => {
+    expect(suggestBucket({ receiptDate: null, selected: scanningInto, handPicked: null })).toEqual(scanningInto);
   });
 
   it("keeps a bucket picked by hand, whatever the receipt date says", () => {
-    expect(suggestBucket({ receiptDate: "2025-12-30", current: scanningInto, pickedByHand: true })).toEqual(
-      scanningInto,
+    expect(suggestBucket({ receiptDate: "2025-12-30", selected: scanningInto, handPicked: pickedSupply })).toEqual(
+      pickedSupply,
     );
+  });
+});
+
+describe("handPickFor", () => {
+  const december2025Food = { year: 2025, month: 12, category: "Food" as const };
+  const july2025Supply = { year: 2025, month: 7, category: "Supply" as const };
+
+  it("treats picking the bucket the receipt date points to as following the date again", () => {
+    expect(handPickFor({ ...december2025Food }, december2025Food)).toBeNull();
+  });
+
+  it("keeps a pick of any other bucket", () => {
+    expect(handPickFor(july2025Supply, december2025Food)).toEqual(july2025Supply);
+  });
+});
+
+describe("isFiledByHand", () => {
+  const march2026Food = { year: 2026, month: 3, category: "Food" as const };
+  const april2026Food = { year: 2026, month: 4, category: "Food" as const };
+
+  it("counts a receipt filed away from its receipt date's month as picked by hand", () => {
+    expect(isFiledByHand(april2026Food, "2026-03-31")).toBe(true);
+  });
+
+  it("counts a receipt filed in the right month of the wrong year as picked by hand", () => {
+    expect(isFiledByHand(march2026Food, "2025-03-31")).toBe(true);
+  });
+
+  it("doesn't count a receipt filed in its receipt date's month", () => {
+    expect(isFiledByHand(march2026Food, "2026-03-31")).toBe(false);
+  });
+
+  it("doesn't count a receipt without a receipt date", () => {
+    expect(isFiledByHand(april2026Food, null)).toBe(false);
   });
 });
