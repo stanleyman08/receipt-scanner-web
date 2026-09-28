@@ -7,6 +7,14 @@ async function setUpDatabase(pg: PGlite) {
   for (const statement of SETUP_STATEMENTS) await pg.exec(statement);
 }
 
+// New and older databases must end up with the same shape, so later schema changes work on both.
+async function hasPerCompanyUniqueConstraint(pg: PGlite) {
+  const { rows } = await pg.query(
+    "SELECT 1 FROM pg_constraint WHERE conname = 'buckets_company_year_month_category_key' AND contype = 'u'",
+  );
+  return rows.length === 1;
+}
+
 describe("database setup", () => {
   it("creates Better Auth's tables and the app's tables, and is safe to run again", async () => {
     const pg = new PGlite();
@@ -20,6 +28,7 @@ describe("database setup", () => {
     expect(new Set(rows.map((row) => row.table_name))).toEqual(
       new Set(["user", "session", "account", "verification", "rateLimit", "buckets", "receipts"]),
     );
+    expect(await hasPerCompanyUniqueConstraint(pg)).toBe(true);
   });
 
   it("brings a database set up before companies up to date, filing its buckets under Carino", async () => {
@@ -46,5 +55,6 @@ describe("database setup", () => {
       ON CONFLICT (company, year, month, category) DO NOTHING`);
     const { rows: counted } = await pg.query<{ count: number }>("SELECT count(*)::int AS count FROM buckets");
     expect(counted[0].count).toBe(2);
+    expect(await hasPerCompanyUniqueConstraint(pg)).toBe(true);
   });
 });

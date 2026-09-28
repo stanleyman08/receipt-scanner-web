@@ -27,7 +27,7 @@ export const APP_SCHEMA = [
     month integer NOT NULL CHECK (month BETWEEN 1 AND 12),
     category text NOT NULL CHECK (category IN ('Food', 'Supply', 'Other A')),
     created_at timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (company, year, month, category)
+    CONSTRAINT buckets_company_year_month_category_key UNIQUE (company, year, month, category)
   )`,
   `CREATE TABLE IF NOT EXISTS receipts (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -52,8 +52,15 @@ export const SCHEMA_CHANGES = [
     CHECK (company IN ('Carino', 'Peko Peko'))`,
   "ALTER TABLE buckets ALTER COLUMN company DROP DEFAULT",
   "ALTER TABLE buckets DROP CONSTRAINT IF EXISTS buckets_year_month_category_key",
-  `CREATE UNIQUE INDEX IF NOT EXISTS buckets_company_year_month_category_key
-    ON buckets (company, year, month, category)`,
+  // The same named constraint a new table gets. Postgres has no ADD CONSTRAINT IF NOT EXISTS, hence the check.
+  `DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'buckets_company_year_month_category_key') THEN
+      CREATE UNIQUE INDEX IF NOT EXISTS buckets_company_year_month_category_key
+        ON buckets (company, year, month, category);
+      ALTER TABLE buckets ADD CONSTRAINT buckets_company_year_month_category_key
+        UNIQUE USING INDEX buckets_company_year_month_category_key;
+    END IF;
+  END $$`,
 ];
 
 export const SETUP_STATEMENTS = [...AUTH_SCHEMA, ...APP_SCHEMA, ...SCHEMA_CHANGES];

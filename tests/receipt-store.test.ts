@@ -1,6 +1,6 @@
 import { PGlite } from "@electric-sql/pglite";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { APP_SCHEMA, SCHEMA_CHANGES } from "@/lib/db/schema";
+import { SETUP_STATEMENTS } from "@/lib/db/schema";
 import type { Sql } from "@/lib/db/sql";
 import {
   createBucket,
@@ -19,7 +19,7 @@ const pg = new PGlite();
 const sql: Sql = async (strings, ...values) => (await pg.sql<Record<string, unknown>>(strings, ...values)).rows;
 
 beforeAll(async () => {
-  for (const statement of [...APP_SCHEMA, ...SCHEMA_CHANGES]) await pg.exec(statement);
+  for (const statement of SETUP_STATEMENTS) await pg.exec(statement);
 });
 
 beforeEach(async () => {
