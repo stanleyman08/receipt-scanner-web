@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  bucketAtCompany,
   bucketExists,
-  bucketsOf,
+  filterBucketsByCompany,
   filterBucketsByYearMonth,
   getDefaultBucket,
   getUniqueMonthsForYear,
@@ -10,6 +11,7 @@ import {
   isFiledByHand,
   sortBuckets,
   suggestBucket,
+  toBucketKey,
 } from "@/lib/bucket";
 import type { Bucket, BucketCategory } from "@/types/bucket";
 import type { Company } from "@/types/company";
@@ -77,10 +79,28 @@ describe("sidebar lists", () => {
   });
 });
 
-describe("bucketsOf", () => {
+describe("bucketAtCompany", () => {
+  it("keeps the month and category when a receipt moves to the other company", () => {
+    const carinoApril = { company: "Carino" as const, year: 2026, month: 4, category: "Food" as const };
+    expect(bucketAtCompany(carinoApril, "Peko Peko")).toEqual({
+      company: "Peko Peko",
+      year: 2026,
+      month: 4,
+      category: "Food",
+    });
+  });
+});
+
+describe("toBucketKey", () => {
+  it("keeps what identifies a bucket and drops its id and creation time", () => {
+    expect(toBucketKey(january2026Food)).toEqual({ company: "Carino", year: 2026, month: 1, category: "Food" });
+  });
+});
+
+describe("filterBucketsByCompany", () => {
   it("lists one company's buckets", () => {
     const pekoPekoJanuary = bucket("peko-peko-2026-01-food", 2026, 1, "Food", "Peko Peko");
-    expect(bucketsOf([...buckets, pekoPekoJanuary], "Peko Peko")).toEqual([pekoPekoJanuary]);
+    expect(filterBucketsByCompany([...buckets, pekoPekoJanuary], "Peko Peko")).toEqual([pekoPekoJanuary]);
   });
 });
 

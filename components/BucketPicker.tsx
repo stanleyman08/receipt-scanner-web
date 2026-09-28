@@ -1,6 +1,6 @@
 "use client";
 
-import { bucketExists, bucketsOf, isSameBucket, sortBuckets } from "@/lib/bucket";
+import { filterBucketsByCompany, isSameBucket, sortBuckets, toBucketKey } from "@/lib/bucket";
 import { type Bucket, type BucketKey, formatBucketLabel } from "@/types/bucket";
 
 interface BucketPickerProps {
@@ -22,10 +22,12 @@ function optionValue(bucket: BucketKey): string {
 // The company's existing buckets, plus the chosen and suggested ones when they don't exist yet. Whichever new bucket
 // is chosen is created when the receipt is saved.
 export default function BucketPicker({ id, value, suggested, buckets, onChange, className }: BucketPickerProps) {
-  const companyBuckets = bucketsOf(buckets, value.company);
-  const isNew = (bucket: BucketKey) => !bucketExists(companyBuckets, bucket.year, bucket.month, bucket.category);
+  const isNew = (bucket: BucketKey) => !buckets.some((existing) => isSameBucket(existing, bucket));
   const candidates = isSameBucket(value, suggested) ? [value] : [value, suggested];
-  const options: BucketKey[] = [...candidates.filter(isNew), ...sortBuckets(companyBuckets)];
+  const options: BucketKey[] = [
+    ...candidates.filter(isNew),
+    ...sortBuckets(filterBucketsByCompany(buckets, value.company)),
+  ];
 
   return (
     <select
@@ -33,9 +35,7 @@ export default function BucketPicker({ id, value, suggested, buckets, onChange, 
       value={optionValue(value)}
       onChange={(e) => {
         const picked = options.find((option) => optionValue(option) === e.target.value);
-        if (picked) {
-          onChange({ company: picked.company, year: picked.year, month: picked.month, category: picked.category });
-        }
+        if (picked) onChange(toBucketKey(picked));
       }}
       className={className}
     >

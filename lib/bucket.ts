@@ -38,7 +38,16 @@ export function isSameBucket(a: BucketKey, b: BucketKey): boolean {
   return a.company === b.company && a.year === b.year && a.month === b.month && a.category === b.category;
 }
 
-export function bucketsOf(buckets: Bucket[], company: Company): Bucket[] {
+// Moving a receipt to the other company keeps its month and category.
+export function bucketAtCompany(bucket: BucketKey, company: Company): BucketKey {
+  return { ...toBucketKey(bucket), company };
+}
+
+export function toBucketKey({ company, year, month, category }: BucketKey): BucketKey {
+  return { company, year, month, category };
+}
+
+export function filterBucketsByCompany(buckets: Bucket[], company: Company): Bucket[] {
   return buckets.filter((bucket) => bucket.company === company);
 }
 

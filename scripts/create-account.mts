@@ -4,7 +4,8 @@
 //   ( read -r ACCOUNT_EMAIL; read -rs ACCOUNT_PASSWORD; export ACCOUNT_EMAIL ACCOUNT_PASSWORD; pnpm create-account )
 import { createAuth } from "../lib/auth.ts";
 
-const ACCOUNT_NAME = "Carino";
+// The display name of the one account both companies share; it isn't shown in the app.
+const ACCOUNT_NAME = "Shared account";
 
 const email = process.env.ACCOUNT_EMAIL?.trim().toLowerCase();
 const password = process.env.ACCOUNT_PASSWORD;

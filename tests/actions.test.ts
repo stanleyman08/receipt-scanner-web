@@ -52,4 +52,12 @@ describe("server actions with a signed-in session", () => {
     await expect(run()).resolves.toEqual({ ok: false, error: expect.stringContaining("details look wrong") });
     expect(getSql).not.toHaveBeenCalled();
   });
+
+  it("selectCompanyAction refuses a company that isn't one of the two", async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValueOnce({ session: {}, user: {} } as never);
+    await expect(selectCompanyAction("Carino Bakery" as never)).resolves.toEqual({
+      ok: false,
+      error: expect.stringContaining("details look wrong"),
+    });
+  });
 });

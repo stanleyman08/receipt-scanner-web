@@ -1,6 +1,6 @@
 "use client";
 
-import { COMPANIES, type Company } from "@/types/company";
+import { COMPANIES, type Company, isCompany } from "@/types/company";
 
 interface CompanyPickerProps {
   id: string;
@@ -16,13 +16,12 @@ export default function CompanyPicker({ id, value, onChange, className }: Compan
       id={id}
       value={value}
       onChange={(e) => {
-        const picked = COMPANIES.find((company) => company === e.target.value);
-        if (picked) onChange(picked);
+        if (isCompany(e.target.value)) onChange(e.target.value);
       }}
       className={className}
     >
       {COMPANIES.map((company) => (
-        <option key={company} value={company}>
+        <option key={company} value={company} translate="no">
           {company}
         </option>
       ))}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
 import {
   createBucketAction,
   deleteReceiptAction,
@@ -20,7 +20,7 @@ import ReceiptTable from "@/components/ReceiptTable";
 import { authClient } from "@/lib/auth-client";
 import {
   bucketForDate,
-  bucketsOf,
+  filterBucketsByCompany,
   filterBucketsByYearMonth,
   filterByBucket,
   filterReceiptsByYear,
@@ -30,6 +30,7 @@ import {
   getUniqueMonthsForYear,
   getUniqueYears,
   sortBuckets,
+  toBucketKey,
 } from "@/lib/bucket";
 import { downloadYearExcel } from "@/lib/excel";
 import { optimizeImageForOCR } from "@/lib/image-utils";
@@ -74,9 +75,11 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSwitchingCompany, startCompanySwitch] = useTransition();
+  // The switcher shows the company being switched to while the page loads it.
+  const [shownCompany, setShownCompany] = useOptimistic(company);
 
   // Bucket state, starting on the company's newest bucket
-  const [defaultBucket] = useState(() => getDefaultBucket(bucketsOf(initialBuckets, company)));
+  const [defaultBucket] = useState(() => getDefaultBucket(filterBucketsByCompany(initialBuckets, company)));
   const [selectedBucket, setSelectedBucket] = useState<Bucket | null>(defaultBucket);
   const [selectedYear, setSelectedYear] = useState<number | null>(defaultBucket?.year ?? null);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(defaultBucket?.month ?? null);
@@ -91,7 +94,7 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Derived state. The screen shows one company: its buckets here, and its receipts from the page.
-  const companyBuckets = useMemo(() => bucketsOf(buckets, company), [buckets, company]);
+  const companyBuckets = useMemo(() => filterBucketsByCompany(buckets, company), [buckets, company]);
   const sortedBuckets = sortBuckets(companyBuckets);
   const receiptCounts = getReceiptCountsByBucket(receipts);
   const uniqueYears = getUniqueYears(companyBuckets);
@@ -154,6 +157,7 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
   const handleSwitchCompany = (next: Company) => {
     if (next === company) return;
     startCompanySwitch(async () => {
+      setShownCompany(next);
       try {
         const result = await selectCompanyAction(next);
         if (!result.ok) setError(result.error);
@@ -199,8 +203,7 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
   // Process the receipt scan through stages (read only, no saving)
   const processReceipt = async (imageData: string) => {
     if (selectedBucket === null) return;
-    const { year, month, category } = selectedBucket;
-    const scanningInto: BucketKey = { company, year, month, category };
+    const scanningInto = toBucketKey(selectedBucket);
     abortControllerRef.current = new AbortController();
 
     const updateStage = (stage: ProcessingStage) => {
@@ -409,11 +412,11 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
             </header>
 
             <div className="mb-6">
-              <CompanySwitcher company={company} isSwitching={isSwitchingCompany} onSwitch={handleSwitchCompany} />
+              <CompanySwitcher company={shownCompany} isSwitching={isSwitchingCompany} onSwitch={handleSwitchCompany} />
             </div>
 
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              <div role="alert" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
                 {error}
                 <button type="button" onClick={() => setError(null)} className="ml-2 text-red-500 hover:text-red-700">
                   ×
@@ -421,9 +424,12 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
               </div>
             )}
 
-            {success && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">{success}</div>
-            )}
+            {/* Always there, so screen readers announce messages such as "Receipt moved to Peko Peko." */}
+            <div role="status">
+              {success && (
+                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">{success}</div>
+              )}
+            </div>
 
             {/* No buckets prompt */}
             {sortedBuckets.length === 0 && (
