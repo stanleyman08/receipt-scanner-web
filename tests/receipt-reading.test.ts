@@ -77,6 +77,8 @@ describe("readReceipt", () => {
     ["2026-3-8", "2026-03-08"],
     ["26/03/28", "2026-03-28"],
     ["25/12/31", "2025-12-31"],
+    ["03/28/2026", "2026-03-28"],
+    ["07/05/26", "2026-07-05"],
     ["Mar 28, 2026", "2026-03-28"],
     ["March 28 2026", "2026-03-28"],
     ["28 Mar 2026", "2026-03-28"],
@@ -92,14 +94,26 @@ describe("readReceipt", () => {
     expect(readDate(written)).toBe(date);
   });
 
+  it.each(["Aug 18, 2026 at", "Aug 18, 2026 at 19:18", "Aug 18, 2026 at 7:18 PM"])(
+    "reads a Meet Fresh date %s",
+    (written) => {
+      const fields = readReceipt(
+        receipt(field("VENDOR_NAME", "Meet Fresh"), field("INVOICE_RECEIPT_DATE", written)),
+        SCANNED_ON,
+      );
+      expect(fields.receipt_date).toBe("2026-08-18");
+    },
+  );
+
   it.each([
     ["28/03/2026", "day first"],
-    ["03/28/2026", "month first"],
     ["27/09/26", "a two-digit year that would be next year"],
     ["15/04/26", "a two-digit year from years ago"],
     ["25/09/26", "a two-digit date that could just as well be day first"],
     ["25/09/26 14:32", "the same with a time"],
     ["2026-12-01", "a date after the scan"],
+    ["12/01/2026", "a month-first date after the scan"],
+    ["02/30/26", "a month-first day that doesn't exist"],
     ["28-Mar-35", "a two-digit year far in the future"],
     ["2026-02-30", "a day that doesn't exist"],
     ["2026-13-01", "a month that doesn't exist"],
@@ -118,6 +132,18 @@ describe("readReceipt", () => {
     const lines = ["Made-up Supplier Ltd", "GST # 81234-5678 RT0001", "Total $425.50"];
     const fields = readReceipt(receiptWithItems(["300.00", "$125.50"], lines, field("TOTAL", "$425.50")));
     expect(fields).toMatchObject({ subtotal_cents: 42550, gst_cents: 0, total_cents: 42550 });
+  });
+
+  it("includes a starred modified price when confirming the subtotal from line items", () => {
+    const fields = readReceipt(
+      receiptWithItems(
+        ["W *$0.00", "W $4.00", "U $8.00"],
+        ["Reusable bag W *$0.00", '*Modified from: "$2.00', "Total $12.00"],
+        field("VENDOR_NAME", "T&T Supermarket"),
+        field("TOTAL", "$12.00"),
+      ),
+    );
+    expect(fields).toMatchObject({ subtotal_cents: 1200, gst_cents: 0, total_cents: 1200 });
   });
 
   it.each([
@@ -157,6 +183,39 @@ describe("readReceipt", () => {
   });
 
   describe("invoice number", () => {
+    it.each(["Invoice #", "Tax Invoice #", "Supplier Invoice #"])("keeps %s over a transaction number", (label) => {
+      const fields = readReceipt(
+        receipt(field("INVOICE_RECEIPT_ID", "INV-77", label), field("OTHER", "550123", "Trans:")),
+      );
+      expect(fields.invoice_number).toBe("INV-77");
+    });
+
+    it("doesn't take an invoice date as the invoice number", () => {
+      const fields = readReceipt(
+        receipt(field("INVOICE_RECEIPT_DATE", "2026-03-28", "Invoice Date"), field("OTHER", "550123", "Trans:")),
+      );
+      expect(fields.invoice_number).toBe("550123");
+    });
+
+    it("doesn't take an invoice total as the invoice number", () => {
+      const fields = readReceipt(
+        receipt(field("TOTAL", "$12.00", "Invoice Total"), field("INVOICE_RECEIPT_ID", "550123", "Invoice #")),
+      );
+      expect(fields.invoice_number).toBe("550123");
+    });
+
+    it("takes a six-digit transaction number over a short card reference", () => {
+      const fields = readReceipt(
+        receipt(
+          field("VENDOR_NAME", "T&T Supermarket"),
+          field("INVOICE_RECEIPT_ID", "550123", "Trans:"),
+          field("OTHER", "321", "Ref #:"),
+          field("OTHER", "01234A", "AUTH #:"),
+        ),
+      );
+      expect(fields.invoice_number).toBe("550123");
+    });
+
     // The invoice number is a unique ID for finding the paper receipt again: usually a six-digit number with an ID's
     // label. Other numbers of six digits, like a cashier's or a card slip's receipt number, don't count.
     it.each([
@@ -227,8 +286,16 @@ describe("readReceipt", () => {
     });
   });
 
-  describe("vendor rules", () => {
+  describe("month-first dates", () => {
     const SCANNED_ON = new Date("2026-09-27T12:00:00Z");
+
+    it.each(["08/18/2026,", "08/18/2026, 16:38:51"])("reads a Fujiya date %s", (written) => {
+      const fields = readReceipt(
+        receipt(field("VENDOR_NAME", "Fujiya"), field("INVOICE_RECEIPT_DATE", written)),
+        SCANNED_ON,
+      );
+      expect(fields.receipt_date).toBe("2026-08-18");
+    });
 
     it.each([
       ["07/20/26", "2026-07-20"],
@@ -251,12 +318,32 @@ describe("readReceipt", () => {
       expect(fields.receipt_date).toBe("2026-07-05");
     });
 
-    it("still leaves another vendor's month-first date blank", () => {
+    it("reads a T&T date month first", () => {
+      const fields = readReceipt(
+        receipt(field("VENDOR_NAME", "T&T Supermarket"), field("INVOICE_RECEIPT_DATE", "08/18/26")),
+        SCANNED_ON,
+      );
+      expect(fields.receipt_date).toBe("2026-08-18");
+    });
+
+    it("recognizes T&T's date format when another vendor name on the scan is misread", () => {
+      const fields = readReceipt(
+        receipt(
+          field("VENDOR_NAME", "1&1 SUPERMARKET"),
+          field("VENDOR_NAME", "T&T Supermarket"),
+          field("INVOICE_RECEIPT_DATE", "08/18/26"),
+        ),
+        SCANNED_ON,
+      );
+      expect(fields.receipt_date).toBe("2026-08-18");
+    });
+
+    it("falls back to month first for another vendor", () => {
       const fields = readReceipt(
         receipt(field("VENDOR_NAME", "Corner Grocery"), field("INVOICE_RECEIPT_DATE", "07/20/26")),
         SCANNED_ON,
       );
-      expect(fields.receipt_date).toBeNull();
+      expect(fields.receipt_date).toBe("2026-07-20");
     });
   });
 
