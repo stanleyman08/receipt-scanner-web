@@ -3,9 +3,11 @@ import { parseAmountCents } from "@/lib/money";
 import type { ReceiptDetails } from "@/types/receipt";
 
 const VENDOR_TYPES = ["VENDOR_NAME", "VENDOR", "NAME"];
+const WHOLESALE_CLUB = /^wholesale\s+club$/i;
 const DATE_TYPES = ["INVOICE_RECEIPT_DATE", "DATE", "TRANSACTION_DATE"];
 const INVOICE_TYPES = ["INVOICE_RECEIPT_ID", "INVOICE_NUMBER", "RECEIPT_ID"];
 const INVOICE_LABELS = [/Invoice Number/i, /Ref\. #/i, /Ref #/i, /Reference/i];
+const REFERENCE_LABELS = [/\bREF(ERENCE)?\b/i];
 // The invoice number is a unique ID for finding the paper receipt again, usually six digits: a supplier's invoice
 // or transaction number, or else the card slip's approval, authorization or reference number, in that order. A label
 // starts a word, short or in full, so "PREFERRED" and "REFUND" aren't a "REF".
@@ -14,7 +16,7 @@ const SIX_DIGIT_ID_LABELS = [
   /\bTRANS(ACTION)?\b/i,
   /\bAPPROVAL/i,
   /\bAUTH(ORI[SZ]ATION)?\b/i,
-  /\bREF(ERENCE)?\b/i,
+  ...REFERENCE_LABELS,
 ];
 const SIX_DIGITS = /^\d{6}$/;
 // Six digits right after a label on its printed line, and not part of a longer number: "AUTH # 865464", "Ref. #: 448816".
@@ -37,7 +39,11 @@ const TOTAL_TYPES = ["TOTAL", "AMOUNT_DUE", "GRAND_TOTAL"];
  */
 export function readReceipt(document: ExpenseDocument, scannedOn: Date = new Date()): ReceiptDetails {
   const fields = document.SummaryFields ?? [];
-  const vendor = valueOfType(fields, VENDOR_TYPES);
+  const vendor = readVendor(fields);
+  // Wholesale Club uses the card slip's six-digit reference rather than its long invoice number.
+  const wholesaleReference = WHOLESALE_CLUB.test(vendor ?? "")
+    ? (sixDigitIdInFields(fields, REFERENCE_LABELS) ?? sixDigitIdInLines(document.Blocks ?? [], REFERENCE_LABELS))
+    : null;
   let subtotalCents = parseAmountCents(valueOfType(fields, SUBTOTAL_TYPES));
   const gstCents = parseAmountCents(valueOfType(fields, GST_TYPES) ?? valueOfLabel(fields, GST_LABELS, TAX_ID_TYPES));
   const totalCents = parseAmountCents(valueOfType(fields, TOTAL_TYPES));
@@ -55,6 +61,7 @@ export function readReceipt(document: ExpenseDocument, scannedOn: Date = new Dat
     vendor,
     receipt_date: parseReceiptDate(valueOfType(fields, DATE_TYPES), scannedOn),
     invoice_number:
+      wholesaleReference ??
       valueOfLabel(fields, INVOICE_LABEL, DATE_TYPES) ??
       sixDigitIdInFields(fields) ??
       sixDigitIdInLines(document.Blocks ?? []) ??
@@ -90,9 +97,21 @@ function lineItemsCents(document: ExpenseDocument): number | null {
   return amounts.reduce<number>((sum, cents) => sum + (cents ?? 0), 0);
 }
 
-/** The first labelled field of six digits whose label names an ID, in the order of SIX_DIGIT_ID_LABELS. */
-function sixDigitIdInFields(fields: ExpenseField[]): string | null {
-  for (const label of SIX_DIGIT_ID_LABELS) {
+/** Prefer the retailer recognized elsewhere when the first vendor candidate is the customer or a misread logo. */
+function readVendor(fields: ExpenseField[]): string | null {
+  if (valueOfLabel(fields, [WHOLESALE_CLUB])) return "Wholesale Club";
+  // Faded T&T receipts can have a garbled first candidate and a readable second one.
+  const tAndT = fields.find(
+    (field) =>
+      VENDOR_TYPES.includes(field.Type?.Text?.toUpperCase() ?? "") &&
+      /^T\s*&\s*T\s+Supermarket$/i.test(cleanValue(field) ?? ""),
+  );
+  return (tAndT && cleanValue(tAndT)) ?? valueOfType(fields, VENDOR_TYPES);
+}
+
+/** The first labelled field of six digits whose label names an ID, in the supplied label order. */
+function sixDigitIdInFields(fields: ExpenseField[], labels: RegExp[] = SIX_DIGIT_ID_LABELS): string | null {
+  for (const label of labels) {
     const field = fields.find((f) => label.test(f.LabelDetection?.Text ?? "") && SIX_DIGITS.test(cleanValue(f) ?? ""));
     if (field) return cleanValue(field);
   }
@@ -101,11 +120,11 @@ function sixDigitIdInFields(fields: ExpenseField[]): string | null {
 
 /**
  * The same, from the printed lines, as "AUTH # 865464": Textract doesn't always return a card slip's number as a
- * field. Tried after a field labelled "Invoice", so a reference printed elsewhere doesn't replace a supplier's invoice.
+ * field. Normally tried after a field labelled "Invoice"; Wholesale Club prefers its six-digit reference instead.
  */
-function sixDigitIdInLines(blocks: Block[]): string | null {
+function sixDigitIdInLines(blocks: Block[], labels: RegExp[] = SIX_DIGIT_ID_LABELS): string | null {
   const lines = blocks.filter((block) => block.BlockType === "LINE").map((block) => block.Text ?? "");
-  for (const label of SIX_DIGIT_ID_LABELS) {
+  for (const label of labels) {
     for (const line of lines) {
       const match = label.exec(line);
       const digits = match && THEN_SIX_DIGITS.exec(line.slice(match.index + match[0].length));

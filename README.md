@@ -97,6 +97,10 @@ Lefthook runs Biome on staged files before each commit, and the tests and type c
 
 ## Tracing a misread
 
+For Wholesale Club, the scan recognizes the store heading when Textract mistakes the customer's company for the vendor, and prefers a readable six-digit reference number over the long invoice number. For faded T&T receipts, a recognized T&T vendor candidate takes priority over a garbled candidate.
+
+Capture the entire receipt inside the camera guide, including the payment references at the bottom. The in-app camera crops to that guide. For a long receipt, taking a full photo with your phone's camera and uploading it can avoid cutting off the footer. Flatten the paper and use even lighting without glare or hand shadows for faint thermal print.
+
 When a receipt has no readable subtotal, the scan calculates it as total minus GST if both amounts are readable and GST is between zero and the total. This covers gas receipts that print a total with GST included. A readable printed subtotal takes priority.
 
 When a scan reads a field wrong, its photo (`image`, the JPEG the app sent) and what Textract returned for it (`textract`) are in the `scans` table for 3 days, as long as it stays among the newest 300. Find the scan by the time the receipt was saved. Look at the photo to see what's printed, and replay the response through `readReceipt` in `lib/receipt-reading.ts` to see why: pass it `textract.ExpenseDocuments[0]`, and the scan's `created_at` as the scan date, since dates are read relative to it. To try a fix that changes the photo or the Textract call, send the photo again. Older scans are deleted each time a new one is kept. Both columns hold everything printed on the receipt, so keep them out of the repo, which is public.
