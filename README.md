@@ -7,6 +7,7 @@ A web application for scanning receipts using your phone's camera. It reads each
 - Two companies, Carino and Peko Peko, each with its own buckets, receipts and exports, and a switcher at the top
 - Scan receipts using your device's camera, or upload a photo
 - Automatic data extraction (vendor, date, subtotal, GST, total, invoice number)
+- Receipt dates accept year-first dates and month names, with month/day/year as the numeric fallback (MM/DD/YYYY or MM/DD/YY)
 - Each scan's photo and what Textract returned for it are kept for 3 days (the newest 300 at most), so a misread field can be traced
 - Receipts filed into the bucket for their date, with pickers to choose another bucket or the other company
 - One shared account for everyone at both companies, with sign-in attempts rate-limited
