@@ -28,6 +28,18 @@ function receiptWithItems(prices: (string | undefined)[], lines: string[], ...fi
 }
 
 describe("readReceipt", () => {
+  it("reads Wholesale Club from its store heading when the vendor field contains the customer's company", () => {
+    const fields = readReceipt(
+      receipt(field("VENDOR_NAME", "Made-up Catering Ltd"), field("OTHER", "#1234", "wholesale club")),
+    );
+    expect(fields.vendor).toBe("Wholesale Club");
+  });
+
+  it("prefers a readable T&T vendor candidate over a misread one on a faded receipt", () => {
+    const fields = readReceipt(receipt(field("VENDOR_NAME", "Made-up Store"), field("VENDOR_NAME", "T&T Supermarket")));
+    expect(fields.vendor).toBe("T&T Supermarket");
+  });
+
   it("reads the vendor, receipt date, invoice number and amounts of a typical receipt", () => {
     const fields = readReceipt(
       receipt(
@@ -211,6 +223,40 @@ describe("readReceipt", () => {
   });
 
   describe("invoice number", () => {
+    it("uses Wholesale Club's six-digit reference over its long printed invoice number", () => {
+      const document = receipt(
+        field("VENDOR_NAME", "Wholesale Club"),
+        field("INVOICE_RECEIPT_ID", "1234567890123456", "INVOICE #:"),
+      );
+      document.Blocks = [{ BlockType: "LINE", Text: "Ref #: 554433" }];
+      expect(readReceipt(document).invoice_number).toBe("554433");
+    });
+
+    it("uses Wholesale Club's labelled six-digit reference ahead of its approval and invoice numbers", () => {
+      const fields = readReceipt(
+        receipt(
+          field("VENDOR_NAME", "Made-up Catering Ltd"),
+          field("OTHER", "#1234", "wholesale club"),
+          field("INVOICE_RECEIPT_ID", "1234567890123456", "INVOICE #:"),
+          field("OTHER", "660000", "APPROVAL"),
+          field("OTHER", "554433", "Ref #:"),
+        ),
+      );
+      expect(fields).toMatchObject({ vendor: "Wholesale Club", invoice_number: "554433" });
+    });
+
+    it.each(["Ref #: 55443", "Ref #: 5544332", "No readable reference"])(
+      "keeps Wholesale Club's invoice when no six-digit reference is readable (%s)",
+      (line) => {
+        const document = receipt(
+          field("VENDOR_NAME", "Wholesale Club"),
+          field("INVOICE_RECEIPT_ID", "1234567890123456", "INVOICE #:"),
+        );
+        document.Blocks = [{ BlockType: "LINE", Text: line }];
+        expect(readReceipt(document).invoice_number).toBe("1234567890123456");
+      },
+    );
+
     it.each(["Invoice #", "Tax Invoice #", "Supplier Invoice #"])("keeps %s over a transaction number", (label) => {
       const fields = readReceipt(
         receipt(field("INVOICE_RECEIPT_ID", "INV-77", label), field("OTHER", "550123", "Trans:")),
