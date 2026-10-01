@@ -29,7 +29,8 @@ const TOTAL_TYPES = ["TOTAL", "AMOUNT_DUE", "GRAND_TOTAL"];
 
 /**
  * The details a scan pre-fills from Textract's AnalyzeExpense result. Anything the receipt doesn't show, or that
- * can't be read, stays null for the user to fill in. Numeric dates fall back to month/day/year. A receipt that shows
+ * can't be read, stays null for the user to fill in. A missing subtotal is the total minus GST when both amounts
+ * can be read and GST is between zero and the total. Numeric dates fall back to month/day/year. A receipt that shows
  * neither a subtotal nor GST, mentions no sales tax, and whose line items add up to its total had nothing else
  * charged, so its subtotal is the total and its GST is 0. Had a GST line been missed, the items wouldn't add up to the
  * total, and prices that include GST, or a GST line read as an item, mention the tax.
@@ -37,9 +38,12 @@ const TOTAL_TYPES = ["TOTAL", "AMOUNT_DUE", "GRAND_TOTAL"];
 export function readReceipt(document: ExpenseDocument, scannedOn: Date = new Date()): ReceiptDetails {
   const fields = document.SummaryFields ?? [];
   const vendor = valueOfType(fields, VENDOR_TYPES);
-  const subtotalCents = parseAmountCents(valueOfType(fields, SUBTOTAL_TYPES));
+  let subtotalCents = parseAmountCents(valueOfType(fields, SUBTOTAL_TYPES));
   const gstCents = parseAmountCents(valueOfType(fields, GST_TYPES) ?? valueOfLabel(fields, GST_LABELS, TAX_ID_TYPES));
   const totalCents = parseAmountCents(valueOfType(fields, TOTAL_TYPES));
+  if (subtotalCents === null && gstCents !== null && totalCents !== null && gstCents >= 0 && gstCents <= totalCents) {
+    subtotalCents = totalCents - gstCents;
+  }
   const isOnlyLineItems =
     subtotalCents === null &&
     gstCents === null &&
