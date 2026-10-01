@@ -97,6 +97,8 @@ Lefthook runs Biome on staged files before each commit, and the tests and type c
 
 ## Tracing a misread
 
+When a receipt has no readable subtotal, the scan calculates it as total minus GST if both amounts are readable and GST is between zero and the total. This covers gas receipts that print a total with GST included. A readable printed subtotal takes priority.
+
 When a scan reads a field wrong, its photo (`image`, the JPEG the app sent) and what Textract returned for it (`textract`) are in the `scans` table for 3 days, as long as it stays among the newest 300. Find the scan by the time the receipt was saved. Look at the photo to see what's printed, and replay the response through `readReceipt` in `lib/receipt-reading.ts` to see why: pass it `textract.ExpenseDocuments[0]`, and the scan's `created_at` as the scan date, since dates are read relative to it. To try a fix that changes the photo or the Textract call, send the photo again. Older scans are deleted each time a new one is kept. Both columns hold everything printed on the receipt, so keep them out of the repo, which is public.
 
 ## Tech Stack

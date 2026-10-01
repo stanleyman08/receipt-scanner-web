@@ -53,6 +53,8 @@ describe("readReceipt", () => {
   it.each([
     ["$1,234.56", 123456],
     ["CAD$ 60.00", 6000],
+    ["84.00\nCAD$", 8400],
+    ["CADS 73.50", 7350],
     ["CA$12.00", 1200],
     ["US$ 7.50", 750],
     ["CA $12.00", 1200],
@@ -122,9 +124,35 @@ describe("readReceipt", () => {
     expect(readDate(written)).toBeNull();
   });
 
-  it("leaves the subtotal blank when the receipt doesn't show one", () => {
+  it("calculates a missing subtotal by subtracting GST from the total", () => {
     const fields = readReceipt(receipt(field("TAX", "$0.50"), field("TOTAL", "$10.50")));
-    expect(fields).toMatchObject({ subtotal_cents: null, gst_cents: 50, total_cents: 1050 });
+    expect(fields).toMatchObject({ subtotal_cents: 1000, gst_cents: 50, total_cents: 1050 });
+  });
+
+  it("calculates a gas receipt subtotal from an OCR-formatted total and included GST", () => {
+    const fields = readReceipt(receipt(field("OTHER", "$3.50", "GST INCLUDED"), field("TOTAL", "73.50\nCAD$")));
+    expect(fields).toMatchObject({ subtotal_cents: 7000, gst_cents: 350, total_cents: 7350 });
+  });
+
+  it("keeps a printed subtotal when the total also includes a tip", () => {
+    const fields = readReceipt(receipt(field("SUBTOTAL", "$20.00"), field("TAX", "$1.00"), field("TOTAL", "$24.00")));
+    expect(fields).toMatchObject({ subtotal_cents: 2000, gst_cents: 100, total_cents: 2400 });
+  });
+
+  it("calculates a missing subtotal when the printed GST is zero", () => {
+    const fields = readReceipt(receipt(field("TAX", "$0.00"), field("TOTAL", "$10.50")));
+    expect(fields).toMatchObject({ subtotal_cents: 1050, gst_cents: 0, total_cents: 1050 });
+  });
+
+  it.each([
+    ["GST is missing", [field("TOTAL", "$10.50")]],
+    ["total is missing", [field("TAX", "$0.50")]],
+    ["GST is unreadable", [field("TAX", "unclear"), field("TOTAL", "$10.50")]],
+    ["total is unreadable", [field("TAX", "$0.50"), field("TOTAL", "unclear")]],
+    ["GST exceeds the total", [field("TAX", "$11.00"), field("TOTAL", "$10.50")]],
+    ["GST is negative", [field("TAX", "-$0.50"), field("TOTAL", "$10.50")]],
+  ])("leaves a missing subtotal blank when %s", (_case, fields) => {
+    expect(readReceipt(receipt(...fields)).subtotal_cents).toBeNull();
   });
 
   it("takes the total as the subtotal, and no GST, when there's neither and the line items add up to the total", () => {
