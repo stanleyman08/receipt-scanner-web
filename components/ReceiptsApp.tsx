@@ -19,7 +19,6 @@ import ExportButton from "@/components/ExportButton";
 import ReceiptTable from "@/components/ReceiptTable";
 import { authClient } from "@/lib/auth-client";
 import {
-  bucketForDate,
   filterBucketsByCompany,
   filterBucketsByYearMonth,
   filterByBucket,
@@ -29,6 +28,7 @@ import {
   getReceiptCountsByYear,
   getUniqueMonthsForYear,
   getUniqueYears,
+  reviewOfScan,
   sortBuckets,
   toBucketKey,
   withBucket,
@@ -232,13 +232,7 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
       if (abortControllerRef.current?.signal.aborted) return;
 
       if (result.success) {
-        // File the receipt under its receipt date's month, in the category being scanned into
-        const bucket = bucketForDate(result.details.receipt_date, scanningInto);
-        setCaptureState({
-          status: "editing",
-          imageData,
-          review: { details: result.details, bucket, pickedByHand: false, selected: scanningInto },
-        });
+        setCaptureState({ status: "editing", imageData, review: reviewOfScan(result.details, scanningInto) });
       } else {
         setCaptureState({ status: "error", imageData, error: result.error });
       }

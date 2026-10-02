@@ -9,6 +9,7 @@ import {
   getUniqueYears,
   handPickFor,
   isFiledByHand,
+  reviewOfScan,
   sortBuckets,
   suggestBucket,
   toBucketKey,
@@ -161,6 +162,27 @@ describe("suggestBucket", () => {
     expect(suggestBucket({ receiptDate: "2025-12-30", selected: scanningInto, handPicked: pickedSupply })).toEqual(
       pickedSupply,
     );
+  });
+});
+
+describe("reviewOfScan", () => {
+  const scanningInto = { company: "Carino" as const, year: 2026, month: 1, category: "Food" as const };
+  const details = {
+    vendor: "Corner Grocery",
+    receipt_date: "2025-12-30",
+    invoice_number: null,
+    subtotal_cents: null,
+    gst_cents: null,
+    total_cents: 1050,
+  };
+
+  it("files a scan into the bucket scanned into, even when its receipt date is in another month", () => {
+    expect(reviewOfScan(details, scanningInto)).toEqual({
+      details,
+      bucket: scanningInto,
+      pickedByHand: true,
+      selected: scanningInto,
+    });
   });
 });
 

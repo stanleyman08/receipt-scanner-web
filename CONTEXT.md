@@ -21,7 +21,7 @@ The photo-and-OCR step that pre-fills a receipt; the result becomes a receipt on
 _Avoid_: Upload, import
 
 **Bucket**:
-One category for one month of one company, such as "Peko Peko · April 2026 · Food", that receipts are filed into. A receipt's bucket normally matches its receipt date, but it can be chosen by hand.
+One category for one month of one company, such as "Peko Peko · April 2026 · Food", that receipts are filed into. A scanned receipt goes into the bucket it was scanned into, even when its receipt date falls in another month; another bucket, such as the one for its receipt date, can be chosen by hand.
 _Avoid_: Folder, group
 
 **Category**:

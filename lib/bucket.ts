@@ -1,6 +1,7 @@
 import { type Bucket, type BucketKey, compareBuckets } from "@/types/bucket";
+import type { ReceiptReview } from "@/types/capture-flow";
 import type { Company } from "@/types/company";
-import type { Receipt } from "@/types/receipt";
+import type { Receipt, ReceiptDetails } from "@/types/receipt";
 
 interface SuggestBucketInput {
   /** YYYY-MM-DD, or null when the receipt has no readable date. */
@@ -22,6 +23,12 @@ export function bucketForDate(receiptDate: string | null, selected: BucketKey): 
 // A receipt follows its receipt date, unless a bucket was picked by hand: that always wins.
 export function suggestBucket({ receiptDate, selected, handPicked }: SuggestBucketInput): BucketKey {
   return handPicked ?? bucketForDate(receiptDate, selected);
+}
+
+// A scan stays in the bucket scanned into, whatever its receipt date says, even once the date is corrected: it starts
+// as picked by hand. The receipt date's month is still offered in the picker.
+export function reviewOfScan(details: ReceiptDetails, scanningInto: BucketKey): ReceiptReview {
+  return { details, bucket: scanningInto, pickedByHand: true, selected: scanningInto };
 }
 
 // Picking the bucket the receipt date points to means following the date again, so it isn't kept as a hand pick.

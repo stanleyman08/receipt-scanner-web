@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import EditScreen from "@/components/capture-flow/EditScreen";
+import { reviewOfScan } from "@/lib/bucket";
 import type { ReceiptReview } from "@/types/capture-flow";
 
 const APRIL_2026_FOOD = { company: "Carino", year: 2026, month: 4, category: "Food" } as const;
@@ -21,14 +22,14 @@ const SCANNED: ReceiptReview = {
   selected: APRIL_2026_FOOD,
 };
 
-function renderReview() {
+function renderReview(review: ReceiptReview = SCANNED) {
   const user = userEvent.setup();
   const onConfirm = vi.fn();
   const onRetake = vi.fn();
   render(
     <EditScreen
       imageData="data:image/jpeg;base64,"
-      review={SCANNED}
+      review={review}
       buckets={[]}
       onConfirm={onConfirm}
       onRetake={onRetake}
@@ -47,6 +48,32 @@ describe("EditScreen", () => {
     expect(onConfirm).toHaveBeenCalledWith(
       expect.objectContaining({ bucket: { ...APRIL_2026_FOOD, company: "Peko Peko" } }),
     );
+  });
+
+  it("keeps a scan in the bucket scanned into when its receipt date is in another month, even once corrected", async () => {
+    const { user, onConfirm } = renderReview(
+      reviewOfScan({ ...SCANNED.details, receipt_date: "2026-03-30" }, APRIL_2026_FOOD),
+    );
+
+    await user.clear(screen.getByLabelText("Date"));
+    await user.type(screen.getByLabelText("Date"), "2026-02-14");
+    await user.click(screen.getByRole("button", { name: "Save Receipt" }));
+
+    expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({ bucket: APRIL_2026_FOOD }));
+  });
+
+  it("points out a receipt date in another month than the bucket", () => {
+    renderReview(reviewOfScan({ ...SCANNED.details, receipt_date: "2026-03-30" }, APRIL_2026_FOOD));
+
+    expect(screen.getByLabelText("Bucket")).toHaveAccessibleDescription(
+      "The receipt date is in March 2026, not this bucket's month.",
+    );
+  });
+
+  it("says nothing when the receipt date is in the bucket's month", () => {
+    renderReview(reviewOfScan(SCANNED.details, APRIL_2026_FOOD));
+
+    expect(screen.getByLabelText("Bucket")).not.toHaveAccessibleDescription();
   });
 
   it("refuses an amount that isn't a plain number", async () => {
