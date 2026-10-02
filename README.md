@@ -9,7 +9,7 @@ A web application for scanning receipts using your phone's camera. It reads each
 - Automatic data extraction (vendor, date, subtotal, GST, total, invoice number)
 - Receipt dates accept year-first dates and month names, with month/day/year as the numeric fallback (MM/DD/YYYY or MM/DD/YY)
 - Each scan's photo and what Textract returned for it are kept for 3 days (the newest 300 at most), so a misread field can be traced
-- Receipts filed into the bucket for their date, with pickers to choose another bucket or the other company
+- Scanned receipts filed into the bucket being scanned into, whatever their date, with pickers to choose another bucket (including the one for the receipt's date) or the other company
 - One shared account for everyone at both companies, with sign-in attempts rate-limited
 - Export a bucket, or a company's whole year, to Excel
 - Responsive design for mobile and desktop
