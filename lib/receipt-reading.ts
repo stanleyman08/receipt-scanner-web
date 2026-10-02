@@ -46,11 +46,17 @@ export function readReceipt(document: ExpenseDocument, scannedOn: Date = new Dat
     : null;
   let subtotalCents = parseAmountCents(valueOfType(fields, SUBTOTAL_TYPES));
   // A receipt that breaks its tax down, as Costco's "(G) GST 5%" and "(P) PST 7%" under the combined "TAX", has its
-  // GST in a tax field of its own.
-  const taxFields = fields.filter((field) => GST_TYPES.includes(field.Type?.Text?.toUpperCase() ?? ""));
+  // GST in a tax field of its own. A tax table's other columns aren't the tax: Save-On-Foods prints "Tax-Code GST"
+  // and "Taxable-Value 8.07" beside "Tax-Value 0.40".
+  const taxAmounts = fields.filter(
+    (field) =>
+      GST_TYPES.includes(field.Type?.Text?.toUpperCase() ?? "") &&
+      /\d/.test(field.ValueDetection?.Text ?? "") &&
+      !/taxable/i.test(field.LabelDetection?.Text ?? ""),
+  );
   const gstCents = parseAmountCents(
-    valueOfLabel(taxFields, [/\bGST\b/i]) ??
-      valueOfType(fields, GST_TYPES) ??
+    valueOfLabel(taxAmounts, [/\bGST\b/i]) ??
+      (taxAmounts[0] ? cleanValue(taxAmounts[0]) : null) ??
       valueOfLabel(fields, GST_LABELS, TAX_ID_TYPES),
   );
   const totalCents = parseAmountCents(valueOfType(fields, TOTAL_TYPES));

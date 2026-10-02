@@ -225,6 +225,19 @@ describe("readReceipt", () => {
     expect(fields).toMatchObject({ subtotal_cents: 10000, gst_cents: 500, total_cents: 11200 });
   });
 
+  it("takes GST from a tax table's tax column, as on a Save-On-Foods receipt", () => {
+    const fields = readReceipt(
+      receipt(
+        field("SUBTOTAL", "$10.00", "Sub Total"),
+        field("TAX", "GST", "Tax-Code"),
+        field("TAX", "10.00", "Taxable-Value"),
+        field("TAX", "0.50", "Tax-Value"),
+        field("TOTAL", "$10.50", "BALANCE DUE"),
+      ),
+    );
+    expect(fields).toMatchObject({ subtotal_cents: 1000, gst_cents: 50, total_cents: 1050 });
+  });
+
   it("prefers an invoice number found by its label over the receipt ID type", () => {
     const fields = readReceipt(receipt(field("RECEIPT_ID", "000123"), field("OTHER", "INV-77", "Invoice Number")));
     expect(fields.invoice_number).toBe("INV-77");
