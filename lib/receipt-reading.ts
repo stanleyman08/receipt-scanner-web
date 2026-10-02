@@ -45,7 +45,14 @@ export function readReceipt(document: ExpenseDocument, scannedOn: Date = new Dat
     ? (sixDigitIdInFields(fields, REFERENCE_LABELS) ?? sixDigitIdInLines(document.Blocks ?? [], REFERENCE_LABELS))
     : null;
   let subtotalCents = parseAmountCents(valueOfType(fields, SUBTOTAL_TYPES));
-  const gstCents = parseAmountCents(valueOfType(fields, GST_TYPES) ?? valueOfLabel(fields, GST_LABELS, TAX_ID_TYPES));
+  // A receipt that breaks its tax down, as Costco's "(G) GST 5%" and "(P) PST 7%" under the combined "TAX", has its
+  // GST in a tax field of its own.
+  const taxFields = fields.filter((field) => GST_TYPES.includes(field.Type?.Text?.toUpperCase() ?? ""));
+  const gstCents = parseAmountCents(
+    valueOfLabel(taxFields, [/\bGST\b/i]) ??
+      valueOfType(fields, GST_TYPES) ??
+      valueOfLabel(fields, GST_LABELS, TAX_ID_TYPES),
+  );
   const totalCents = parseAmountCents(valueOfType(fields, TOTAL_TYPES));
   if (subtotalCents === null && gstCents !== null && totalCents !== null && gstCents >= 0 && gstCents <= totalCents) {
     subtotalCents = totalCents - gstCents;

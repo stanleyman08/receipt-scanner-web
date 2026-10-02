@@ -210,6 +210,21 @@ describe("readReceipt", () => {
     expect(fields.gst_cents).toBe(75);
   });
 
+  it("takes GST from the tax breakdown rather than the combined tax, as on a Costco receipt", () => {
+    const fields = readReceipt(
+      receipt(
+        field("VENDOR_GST_NUMBER", "#812345678RT", "GST"),
+        field("SUBTOTAL", "100.00", "SUBTOTAL"),
+        field("TAX", "12.00", "TAX"),
+        field("OTHER", "5%", "GST"),
+        field("TAX", "7.00", "(P) PST 7%"),
+        field("TAX", "5.00", "(G) GST 5%"),
+        field("TOTAL", "112.00", "TOTAL"),
+      ),
+    );
+    expect(fields).toMatchObject({ subtotal_cents: 10000, gst_cents: 500, total_cents: 11200 });
+  });
+
   it("prefers an invoice number found by its label over the receipt ID type", () => {
     const fields = readReceipt(receipt(field("RECEIPT_ID", "000123"), field("OTHER", "INV-77", "Invoice Number")));
     expect(fields.invoice_number).toBe("INV-77");
