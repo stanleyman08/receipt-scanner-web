@@ -40,6 +40,13 @@ describe("readReceipt", () => {
     expect(fields.vendor).toBe("T&T Supermarket");
   });
 
+  it("reads Whole Foods from its logo when the first vendor candidate is the store's own name", () => {
+    const fields = readReceipt(
+      receipt(field("VENDOR_NAME", "Made-up Store"), field("VENDOR_NAME", "WHOLE\nFOODS\nR\nMARKET")),
+    );
+    expect(fields.vendor).toBe("Whole Foods");
+  });
+
   it("reads the vendor, receipt date, invoice number and amounts of a typical receipt", () => {
     const fields = readReceipt(
       receipt(

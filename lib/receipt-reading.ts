@@ -113,6 +113,12 @@ function lineItemsCents(document: ExpenseDocument): number | null {
 /** Prefer the retailer recognized elsewhere when the first vendor candidate is the customer or a misread logo. */
 function readVendor(fields: ExpenseField[]): string | null {
   if (valueOfLabel(fields, [WHOLESALE_CLUB])) return "Wholesale Club";
+  // Whole Foods' logo, read as "WHOLE FOODS R MARKET", can come after the store's own name, as "Cambie CMB".
+  const isWholeFoods = fields.some(
+    (field) =>
+      VENDOR_TYPES.includes(field.Type?.Text?.toUpperCase() ?? "") && /^whole\s+foods\b/i.test(cleanValue(field) ?? ""),
+  );
+  if (isWholeFoods) return "Whole Foods";
   // Faded T&T receipts can have a garbled first candidate and a readable second one.
   const tAndT = fields.find(
     (field) =>
