@@ -62,6 +62,20 @@ describe("EditScreen", () => {
     expect(onConfirm).toHaveBeenCalledWith(expect.objectContaining({ bucket: APRIL_2026_FOOD }));
   });
 
+  it("points out a receipt date in another month than the bucket", () => {
+    renderReview(reviewOfScan({ ...SCANNED.details, receipt_date: "2026-03-30" }, APRIL_2026_FOOD));
+
+    expect(screen.getByLabelText("Bucket")).toHaveAccessibleDescription(
+      "The receipt date is in March 2026, not this bucket's month.",
+    );
+  });
+
+  it("says nothing when the receipt date is in the bucket's month", () => {
+    renderReview(reviewOfScan(SCANNED.details, APRIL_2026_FOOD));
+
+    expect(screen.getByLabelText("Bucket")).not.toHaveAccessibleDescription();
+  });
+
   it("refuses an amount that isn't a plain number", async () => {
     const { user, onConfirm } = renderReview();
 

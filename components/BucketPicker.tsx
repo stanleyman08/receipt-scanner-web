@@ -12,6 +12,8 @@ interface BucketPickerProps {
   buckets: Bucket[];
   onChange: (bucket: BucketKey) => void;
   className?: string;
+  /** The id of a note about the chosen bucket, read out with it. */
+  describedBy?: string;
 }
 
 // The <option> value that stands for a bucket.
@@ -21,7 +23,15 @@ function optionValue(bucket: BucketKey): string {
 
 // The company's existing buckets, plus the chosen and suggested ones when they don't exist yet. Whichever new bucket
 // is chosen is created when the receipt is saved.
-export default function BucketPicker({ id, value, suggested, buckets, onChange, className }: BucketPickerProps) {
+export default function BucketPicker({
+  id,
+  value,
+  suggested,
+  buckets,
+  onChange,
+  className,
+  describedBy,
+}: BucketPickerProps) {
   const isNew = (bucket: BucketKey) => !buckets.some((existing) => isSameBucket(existing, bucket));
   const candidates = isSameBucket(value, suggested) ? [value] : [value, suggested];
   const options: BucketKey[] = [
@@ -32,6 +42,7 @@ export default function BucketPicker({ id, value, suggested, buckets, onChange, 
   return (
     <select
       id={id}
+      aria-describedby={describedBy}
       value={optionValue(value)}
       onChange={(e) => {
         const picked = options.find((option) => optionValue(option) === e.target.value);

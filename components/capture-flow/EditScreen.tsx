@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import BucketPicker from "@/components/BucketPicker";
 import { useReceiptForm } from "@/components/useReceiptForm";
-import type { Bucket } from "@/types/bucket";
+import { type Bucket, MONTH_NAMES } from "@/types/bucket";
 import type { ReceiptReview } from "@/types/capture-flow";
 import { COMPANIES } from "@/types/company";
 
@@ -39,6 +39,9 @@ export default function EditScreen({ imageData, review, buckets, error, onConfir
   };
 
   const message = amountError ?? error;
+  // A scan stays in the bucket scanned into, so point out when its receipt date falls in another month.
+  const isOtherMonth =
+    fields.receiptDate !== "" && (suggested.year !== bucket.year || suggested.month !== bucket.month);
 
   return (
     <>
@@ -182,7 +185,13 @@ export default function EditScreen({ imageData, review, buckets, error, onConfir
                   buckets={buckets}
                   onChange={pickBucket}
                   className={INPUT_CLASS}
+                  describedBy={isOtherMonth ? `${idPrefix}-bucket-month` : undefined}
                 />
+                {isOtherMonth && (
+                  <p id={`${idPrefix}-bucket-month`} className="mt-1 text-sm text-amber-700">
+                    The receipt date is in {MONTH_NAMES[suggested.month - 1]} {suggested.year}, not this bucket's month.
+                  </p>
+                )}
               </div>
             </div>
           </div>
