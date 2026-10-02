@@ -97,7 +97,7 @@ Lefthook runs Biome on staged files before each commit, and the tests and type c
 
 ## Tracing a misread
 
-For Wholesale Club, the scan recognizes the store heading when Textract mistakes the customer's company for the vendor, and prefers a readable six-digit reference number over the long invoice number. For faded T&T receipts, a recognized T&T vendor candidate takes priority over a garbled candidate.
+For Wholesale Club, the scan recognizes the store heading when Textract mistakes the customer's company for the vendor, and prefers a readable six-digit reference number over the long invoice number. For faded T&T receipts, a recognized T&T vendor candidate takes priority over a garbled candidate. When a receipt breaks its tax down, as Costco prints "(G) GST 5%" and "(P) PST 7%" below the combined "TAX", GST comes from the tax line labelled GST rather than the combined tax.
 
 Capture the entire receipt inside the camera guide, including the payment references at the bottom. The in-app camera crops to that guide. For a long receipt, taking a full photo with your phone's camera and uploading it can avoid cutting off the footer. Flatten the paper and use even lighting without glare or hand shadows for faint thermal print.
 
