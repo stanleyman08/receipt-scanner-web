@@ -91,17 +91,17 @@ export default function ResultsScreen({ imageData, receipt, bucket, onSave, onSc
         <div className="flex gap-4 mt-6">
           <button
             type="button"
-            onClick={onScanAnother}
+            onClick={onSave}
             className="flex-1 px-6 py-4 rounded-full font-medium text-gray-300 border-2 border-gray-600 hover:bg-gray-800 transition-colors"
           >
-            Scan Another
+            Done
           </button>
           <button
             type="button"
-            onClick={onSave}
+            onClick={onScanAnother}
             className="flex-1 px-6 py-4 rounded-full font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
           >
-            Done
+            Scan Another
           </button>
         </div>
       </div>
