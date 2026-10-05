@@ -19,6 +19,8 @@ interface CameraCaptureProps {
 const OVERLAY_MARGIN = 0.1;
 // How often the camera's picture is checked while it starts, until it's more than black.
 const FRAME_CHECK_MS = 100;
+// How long the camera can show no picture before the screen says what to do about it.
+const STUCK_AFTER_MS = 5000;
 
 /**
  * Crops the captured image to the overlay area (center 80%)
@@ -61,21 +63,25 @@ export default function CameraCapture({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
-  const [hasStream, setHasStream] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isStuck, setIsStuck] = useState(false);
 
   // A camera can show solid black for a moment after it starts, and a photo taken then reads as nothing. The shutter
-  // waits until the picture comes through.
+  // waits until the picture comes through, and the screen says what to do if it never does.
   useEffect(() => {
-    if (!hasStream || isReady) return;
-    const timer = setInterval(() => {
+    if (isReady) return;
+    const check = setInterval(() => {
       const video = webcamRef.current?.video;
-      if (video && !isBlankSource(video)) setIsReady(true);
+      if (!video || isBlankSource(video)) return;
+      setIsReady(true);
+      setIsStuck(false);
     }, FRAME_CHECK_MS);
-    return () => clearInterval(timer);
-  }, [hasStream, isReady]);
-
-  const handleUserMedia = useCallback(() => setHasStream(true), []);
+    const stuck = setTimeout(() => setIsStuck(true), STUCK_AFTER_MS);
+    return () => {
+      clearInterval(check);
+      clearTimeout(stuck);
+    };
+  }, [isReady]);
 
   const videoConstraints = {
     facingMode: "environment",
@@ -84,18 +90,24 @@ export default function CameraCapture({
   };
 
   const handleCapture = useCallback(() => {
-    if (webcamRef.current && isReady) {
-      // Trigger flash effect
-      setShowFlash(true);
-      setTimeout(() => setShowFlash(false), 150);
+    const webcam = webcamRef.current;
+    if (!webcam || !isReady) return;
+    // The picture can still drop out after it started, and a black photo isn't worth a scan: wait for it again.
+    if (webcam.video && isBlankSource(webcam.video)) {
+      setIsReady(false);
+      return;
+    }
 
-      const imageSrc = webcamRef.current.getScreenshot();
-      if (imageSrc) {
-        // Crop to overlay area before passing to parent
-        cropToOverlay(imageSrc).then((croppedImage) => {
-          onCapture(croppedImage);
-        });
-      }
+    // Trigger flash effect
+    setShowFlash(true);
+    setTimeout(() => setShowFlash(false), 150);
+
+    const imageSrc = webcam.getScreenshot();
+    if (imageSrc) {
+      // Crop to overlay area before passing to parent
+      cropToOverlay(imageSrc).then((croppedImage) => {
+        onCapture(croppedImage);
+      });
     }
   }, [onCapture, isReady]);
 
@@ -134,7 +146,6 @@ export default function CameraCapture({
           // phone), too small for Textract to read a receipt's small print.
           forceScreenshotSourceSize
           videoConstraints={videoConstraints}
-          onUserMedia={handleUserMedia}
           onUserMediaError={handleCameraError}
           className="flex-1 object-cover w-full h-full"
         />
@@ -171,6 +182,11 @@ export default function CameraCapture({
         {showFlash && <div className="absolute inset-0 bg-white animate-flash pointer-events-none" />}
 
         <div className="absolute bottom-0 left-0 right-0 pb-8 pt-4 bg-gradient-to-t from-black/70 to-transparent">
+          <p role="status" className="mb-3 px-6 text-center text-sm text-white drop-shadow-lg">
+            {!isReady && isStuck
+              ? "The camera isn't showing a picture. Close it and open it again, or reload the page."
+              : ""}
+          </p>
           <div className="flex justify-center gap-6">
             <button
               type="button"

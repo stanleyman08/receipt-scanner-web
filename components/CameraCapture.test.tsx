@@ -1,17 +1,16 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
-import { forwardRef, useEffect, useImperativeHandle } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { forwardRef, useImperativeHandle } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CameraCapture from "@/components/CameraCapture";
 
-const { isBlankSource } = vi.hoisted(() => ({ isBlankSource: vi.fn() }));
+const { isBlankSource, getScreenshot } = vi.hoisted(() => ({ isBlankSource: vi.fn(), getScreenshot: vi.fn() }));
 vi.mock("@/lib/blank-frame", () => ({ isBlankSource }));
 
-// A stand-in for the camera: it starts its stream as it mounts, and its screenshot is a made-up photo.
+// A stand-in for the camera, whose picture is whatever isBlankSource says it is.
 vi.mock("react-webcam", () => ({
-  default: forwardRef<unknown, { onUserMedia?: () => void }>(function FakeWebcam({ onUserMedia }, ref) {
-    useImperativeHandle(ref, () => ({ video: {}, getScreenshot: () => "data:image/jpeg;base64," }));
-    useEffect(() => onUserMedia?.(), [onUserMedia]);
+  default: forwardRef(function FakeWebcam(_props, ref) {
+    useImperativeHandle(ref, () => ({ video: {}, getScreenshot }));
     return null;
   }),
 }));
@@ -22,22 +21,71 @@ function renderCamera() {
   );
 }
 
+// Past a few of the camera's checks on its picture.
+function waitForFrames(ms = 300) {
+  act(() => {
+    vi.advanceTimersByTime(ms);
+  });
+}
+
 describe("CameraCapture", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     isBlankSource.mockReset();
+    getScreenshot.mockReset();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("holds the shutter while the camera's frames are still black", () => {
     isBlankSource.mockReturnValue(true);
     renderCamera();
 
+    waitForFrames();
+
     expect(screen.getByRole("button", { name: "Starting camera…" })).toBeDisabled();
   });
 
-  it("offers the shutter once the camera shows a picture", async () => {
+  it("offers the shutter once the camera shows a picture", () => {
     isBlankSource.mockReturnValueOnce(true).mockReturnValue(false);
     renderCamera();
 
-    expect(await screen.findByRole("button", { name: "Capture" })).toBeEnabled();
+    waitForFrames();
+
+    expect(screen.getByRole("button", { name: "Capture" })).toBeEnabled();
+  });
+
+  it("takes the photo when the picture is still there as the shutter is pressed", () => {
+    isBlankSource.mockReturnValue(false);
+    renderCamera();
+    waitForFrames();
+
+    fireEvent.click(screen.getByRole("button", { name: "Capture" }));
+
+    expect(getScreenshot).toHaveBeenCalled();
+  });
+
+  it("doesn't take the photo when the picture has gone black, and waits for it again", () => {
+    isBlankSource.mockReturnValueOnce(false).mockReturnValue(true);
+    renderCamera();
+    waitForFrames(100);
+
+    fireEvent.click(screen.getByRole("button", { name: "Capture" }));
+
+    expect(getScreenshot).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Starting camera…" })).toBeDisabled();
+  });
+
+  it("says what to do when the camera shows no picture for a while", () => {
+    isBlankSource.mockReturnValue(true);
+    renderCamera();
+
+    waitForFrames(5000);
+
+    expect(
+      screen.getByText("The camera isn't showing a picture. Close it and open it again, or reload the page."),
+    ).toBeInTheDocument();
   });
 });
