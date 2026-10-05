@@ -22,11 +22,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<ScanRespo
 
   try {
     const imageBytes = Buffer.from(parsed.data.image.replace(DATA_URL_PREFIX, ""), "base64");
-    const { details, textract } = await analyzeReceipt(imageBytes);
+    const { details, checkAmounts, textract } = await analyzeReceipt(imageBytes);
     // Kept once the response is sent, so the scan never waits on it. It only helps trace misreads later, so a scan
     // that can't be kept is logged rather than failed.
     after(() => saveScan(getSql(), textract, imageBytes).catch((error) => console.error("Error keeping scan:", error)));
-    return NextResponse.json({ success: true, details });
+    return NextResponse.json({ success: true, details, checkAmounts });
   } catch (error) {
     console.error("Error scanning receipt:", error);
     return NextResponse.json(

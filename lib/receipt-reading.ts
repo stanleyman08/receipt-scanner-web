@@ -1,6 +1,6 @@
 import type { Block, ExpenseDocument, ExpenseField } from "@aws-sdk/client-textract";
 import { parseAmountCents } from "@/lib/money";
-import type { ReceiptDetails } from "@/types/receipt";
+import type { CheckAmounts, ReceiptDetails } from "@/types/receipt";
 
 const VENDOR_TYPES = ["VENDOR_NAME", "VENDOR", "NAME"];
 const WHOLESALE_CLUB = /^wholesale\s+club$/i;
@@ -84,6 +84,26 @@ export function readReceipt(document: ExpenseDocument, scannedOn: Date = new Dat
     gst_cents: isOnlyLineItems ? 0 : gstCents,
     total_cents: totalCents,
   };
+}
+
+// A provincial tax line, as Costco's "(P) PST 7%", a liquor store's "LIQ 10%" or a combined "Tax (GST + PST)" group.
+const OTHER_TAX_LABEL = /\b(PST|LIQ)\b/i;
+
+/** The provincial taxes and discounts on a receipt, read only to check that its amounts add up. */
+export function readCheckAmounts(document: ExpenseDocument): CheckAmounts {
+  const fields = document.SummaryFields ?? [];
+  const sumOf = (matches: (field: ExpenseField) => boolean) =>
+    fields.filter(matches).reduce((sum, field) => sum + Math.abs(parseAmountCents(cleanValue(field)) ?? 0), 0);
+  return {
+    otherTaxCents: sumOf(
+      (field) => GST_TYPES.includes(typeOf(field)) && OTHER_TAX_LABEL.test(field.LabelDetection?.Text ?? ""),
+    ),
+    discountCents: sumOf((field) => typeOf(field) === "DISCOUNT"),
+  };
+}
+
+function typeOf(field: ExpenseField): string {
+  return field.Type?.Text?.toUpperCase() ?? "";
 }
 
 const SALES_TAX = /\b(GST|HST|PST|QST|tax(es)?)\b/i;

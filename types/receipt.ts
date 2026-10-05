@@ -15,8 +15,20 @@ export interface Receipt extends ReceiptDetails {
   created_at: string;
 }
 
+/** Amounts a scan reads only to check that a receipt adds up; they aren't saved. Whole cents, 0 when there are none. */
+export interface CheckAmounts {
+  /** Provincial taxes charged besides GST: PST, and liquor tax. */
+  otherTaxCents: number;
+  /** Discounts, which may or may not already be taken off the subtotal. */
+  discountCents: number;
+}
+
+export const NOTHING_TO_CHECK: CheckAmounts = { otherTaxCents: 0, discountCents: 0 };
+
 /** What /api/scan-receipt returns. */
-export type ScanResponse = { success: true; details: ReceiptDetails } | { success: false; error: string };
+export type ScanResponse =
+  | { success: true; details: ReceiptDetails; checkAmounts: CheckAmounts }
+  | { success: false; error: string };
 
 /** A receipt date as the app and the Excel export show it: 2026/03/28. */
 export function formatReceiptDate(receiptDate: string): string {

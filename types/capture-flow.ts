@@ -1,5 +1,5 @@
 import type { BucketKey } from "./bucket";
-import type { Receipt, ReceiptDetails } from "./receipt";
+import type { CheckAmounts, Receipt, ReceiptDetails } from "./receipt";
 
 export type ProcessingStage = "deskewing" | "optimizing" | "analyzing" | "extracting";
 
@@ -10,6 +10,8 @@ export interface ReceiptReview {
   pickedByHand: boolean;
   /** The bucket selected for the scan (or the receipt's own bucket when editing), used when there's no receipt date. */
   selected: BucketKey;
+  /** The provincial taxes and discounts a scan read, to check its amounts add up. Only a scan's review has them. */
+  checkAmounts?: CheckAmounts;
 }
 
 export type CaptureFlowState =

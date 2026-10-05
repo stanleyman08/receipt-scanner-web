@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/scan-receipt/route";
-import type { ReceiptDetails } from "@/types/receipt";
+import type { CheckAmounts, ReceiptDetails } from "@/types/receipt";
 
 // Mocked at the boundaries: a signed-in session, Textract, and the database. `after` callbacks are collected so a
 // test can run them once the response is back, as Next does.
@@ -27,6 +27,7 @@ const details: ReceiptDetails = {
   gst_cents: 100,
   total_cents: 2100,
 };
+const checkAmounts: CheckAmounts = { otherTaxCents: 140, discountCents: 0 };
 // Made-up: only its shape matters.
 const textract = { ExpenseDocuments: [{ SummaryFields: [] }] };
 const photo = Buffer.from("not really a jpeg");
@@ -43,14 +44,14 @@ async function runAfterCallbacks() {
 beforeEach(() => {
   vi.clearAllMocks();
   afterCallbacks.length = 0;
-  analyzeReceipt.mockResolvedValue({ details, textract });
+  analyzeReceipt.mockResolvedValue({ details, checkAmounts, textract });
   saveScan.mockResolvedValue(undefined);
 });
 
 describe("scanning a receipt", () => {
-  it("answers with the details read, then keeps the photo and what Textract returned", async () => {
+  it("answers with the details and check amounts read, then keeps the photo and what Textract returned", async () => {
     const response = await scan();
-    expect(await response.json()).toEqual({ success: true, details });
+    expect(await response.json()).toEqual({ success: true, details, checkAmounts });
     expect(saveScan).not.toHaveBeenCalled();
 
     await runAfterCallbacks();
@@ -65,7 +66,7 @@ describe("scanning a receipt", () => {
     const response = await scan();
     await runAfterCallbacks();
 
-    expect(await response.json()).toEqual({ success: true, details });
+    expect(await response.json()).toEqual({ success: true, details, checkAmounts });
     expect(logged).toHaveBeenCalledWith(
       "Error keeping scan:",
       expect.objectContaining({ message: "database is down" }),
