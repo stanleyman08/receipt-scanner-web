@@ -125,6 +125,22 @@ describe("EditScreen", () => {
     );
   });
 
+  it("opens an empty date on the bucket's month by filling in its 1st", async () => {
+    const { user } = renderReview({ ...SCANNED, details: { ...SCANNED.details, receipt_date: null } });
+
+    await user.click(screen.getByLabelText("Date"));
+
+    expect(screen.getByLabelText("Date")).toHaveValue("2026-04-01");
+  });
+
+  it("leaves a date that's already filled in as it is", async () => {
+    const { user } = renderReview();
+
+    await user.click(screen.getByLabelText("Date"));
+
+    expect(screen.getByLabelText("Date")).toHaveValue("2026-04-12");
+  });
+
   it("refuses an amount that isn't a plain number", async () => {
     const { user, onConfirm } = renderReview();
 

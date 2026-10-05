@@ -28,6 +28,13 @@ export function useReceiptForm(initial: ReceiptReview) {
     setFields((prev) => ({ ...prev, [field]: value }));
   };
 
+  // A date picker opens on today unless the field has a date, so an empty date gets the 1st of the bucket's month as
+  // the field is pressed, before the picker opens. Tabbing through the field leaves it empty.
+  const fillEmptyDate = () => {
+    if (fields.receiptDate !== "") return;
+    setField("receiptDate", `${bucket.year}-${String(bucket.month).padStart(2, "0")}-01`);
+  };
+
   /** The reviewed receipt, or null when an amount that was filled in isn't a plain number. */
   const toReview = (): ReceiptReview | null => {
     const texts = [fields.subtotal, fields.gst, fields.total];
@@ -51,5 +58,5 @@ export function useReceiptForm(initial: ReceiptReview) {
     };
   };
 
-  return { fields, setField, company, pickCompany, bucket, suggested, pickBucket, toReview };
+  return { fields, setField, fillEmptyDate, company, pickCompany, bucket, suggested, pickBucket, toReview };
 }

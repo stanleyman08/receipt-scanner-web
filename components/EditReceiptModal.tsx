@@ -35,13 +35,14 @@ export default function EditReceiptModal({
   onSave,
 }: EditReceiptModalProps) {
   const idPrefix = useId();
-  const { fields, setField, company, pickCompany, bucket, suggested, pickBucket, toReview } = useReceiptForm({
-    details: receipt,
-    bucket: receiptBucket,
-    // A receipt filed away from its date's month keeps its bucket when the date is edited.
-    pickedByHand: isFiledByHand(receiptBucket, receipt.receipt_date),
-    selected: receiptBucket,
-  });
+  const { fields, setField, fillEmptyDate, company, pickCompany, bucket, suggested, pickBucket, toReview } =
+    useReceiptForm({
+      details: receipt,
+      bucket: receiptBucket,
+      // A receipt filed away from its date's month keeps its bucket when the date is edited.
+      pickedByHand: isFiledByHand(receiptBucket, receipt.receipt_date),
+      selected: receiptBucket,
+    });
   const [amountError, setAmountError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -112,6 +113,7 @@ export default function EditReceiptModal({
               id={`${idPrefix}-date`}
               type="date"
               value={fields.receiptDate}
+              onPointerDown={fillEmptyDate}
               onChange={(e) => setField("receiptDate", e.target.value)}
               className={INPUT_CLASS}
             />
