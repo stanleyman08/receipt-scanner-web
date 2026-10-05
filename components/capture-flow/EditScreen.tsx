@@ -27,7 +27,8 @@ interface EditScreenProps {
 
 export default function EditScreen({ imageData, review, buckets, error, onConfirm, onRetake }: EditScreenProps) {
   const idPrefix = useId();
-  const { fields, setField, company, pickCompany, bucket, suggested, pickBucket, toReview } = useReceiptForm(review);
+  const { fields, setField, fillEmptyDate, company, pickCompany, bucket, suggested, pickBucket, toReview } =
+    useReceiptForm(review);
   const [amountError, setAmountError] = useState<string | null>(null);
   const [showFullImage, setShowFullImage] = useState(false);
 
@@ -101,6 +102,7 @@ export default function EditScreen({ imageData, review, buckets, error, onConfir
                     id={`${idPrefix}-date`}
                     type="date"
                     value={fields.receiptDate}
+                    onFocus={fillEmptyDate}
                     onChange={(e) => setField("receiptDate", e.target.value)}
                     // iOS Safari draws its own date control, wider than the half-width column, unless its native look
                     // is off. Without that look it would centre the date and collapse when empty.

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useBucketChoice } from "@/components/useBucketChoice";
+import { firstDayOfBucket } from "@/lib/bucket";
 import { centsToInput, parseAmountCents } from "@/lib/money";
 import type { ReceiptReview } from "@/types/capture-flow";
 
@@ -28,6 +29,13 @@ export function useReceiptForm(initial: ReceiptReview) {
     setFields((prev) => ({ ...prev, [field]: value }));
   };
 
+  // A date picker opens on today unless the field has a date, so an empty date gets the 1st of the bucket's month as
+  // the field takes focus, before the picker opens. A scroll that starts on the field doesn't focus it.
+  const fillEmptyDate = () => {
+    if (receiptDate) return;
+    setField("receiptDate", firstDayOfBucket(bucket));
+  };
+
   /** The reviewed receipt, or null when an amount that was filled in isn't a plain number. */
   const toReview = (): ReceiptReview | null => {
     const texts = [fields.subtotal, fields.gst, fields.total];
@@ -51,5 +59,5 @@ export function useReceiptForm(initial: ReceiptReview) {
     };
   };
 
-  return { fields, setField, company, pickCompany, bucket, suggested, pickBucket, toReview };
+  return { fields, setField, fillEmptyDate, company, pickCompany, bucket, suggested, pickBucket, toReview };
 }

@@ -20,6 +20,11 @@ export function bucketForDate(receiptDate: string | null, selected: BucketKey): 
   return { company: selected.company, year, month, category: selected.category };
 }
 
+// The 1st of a bucket's month, YYYY-MM-DD: the date a receipt date field starts from when it's empty.
+export function firstDayOfBucket({ year, month }: BucketKey): string {
+  return `${year}-${String(month).padStart(2, "0")}-01`;
+}
+
 // A receipt follows its receipt date, unless a bucket was picked by hand: that always wins.
 export function suggestBucket({ receiptDate, selected, handPicked }: SuggestBucketInput): BucketKey {
   return handPicked ?? bucketForDate(receiptDate, selected);
