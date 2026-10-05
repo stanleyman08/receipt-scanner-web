@@ -14,7 +14,8 @@ export function useReceiptForm(initial: ReceiptReview) {
     receiptDate: initial.details.receipt_date ?? "",
     invoiceNumber: initial.details.invoice_number ?? "",
     subtotal: centsToInput(initial.details.subtotal_cents),
-    gst: centsToInput(initial.details.gst_cents),
+    // A receipt with no GST read or filled in has none, so it's 0.00 rather than blank.
+    gst: centsToInput(initial.details.gst_cents ?? 0),
     total: centsToInput(initial.details.total_cents),
   });
   const receiptDate = fields.receiptDate || null;
@@ -40,12 +41,13 @@ export function useReceiptForm(initial: ReceiptReview) {
         receipt_date: receiptDate,
         invoice_number: fields.invoiceNumber.trim() || null,
         subtotal_cents: subtotalCents,
-        gst_cents: gstCents,
+        gst_cents: gstCents ?? 0,
         total_cents: totalCents,
       },
       bucket,
       pickedByHand,
       selected,
+      checkAmounts: initial.checkAmounts,
     };
   };
 

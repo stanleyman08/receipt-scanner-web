@@ -76,6 +76,55 @@ describe("EditScreen", () => {
     expect(screen.getByLabelText("Bucket")).not.toHaveAccessibleDescription();
   });
 
+  it("warns, without stopping the save, when the amounts don't add up", async () => {
+    const { user, onConfirm } = renderReview({
+      ...SCANNED,
+      details: { ...SCANNED.details, total_cents: 1150 },
+      checkAmounts: { otherTaxCents: 0, discountCents: 0 },
+    });
+
+    expect(
+      screen.getByText("Subtotal $10.00 + GST $0.50 = $10.50, but the total is $11.50 ($1.00 off)."),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Save Receipt" }));
+    expect(onConfirm).toHaveBeenCalled();
+  });
+
+  it("updates the warning as an amount is corrected", async () => {
+    const { user } = renderReview({ ...SCANNED, details: { ...SCANNED.details, total_cents: 1150 } });
+
+    await user.clear(screen.getByLabelText("Total"));
+    await user.type(screen.getByLabelText("Total"), "10.50");
+
+    expect(screen.queryByText(/doesn't add up|but the total is/)).not.toBeInTheDocument();
+  });
+
+  it("counts the PST and discount read from the scan", () => {
+    renderReview({
+      ...SCANNED,
+      details: { ...SCANNED.details, subtotal_cents: 3888, gst_cents: 173, total_cents: 3681 },
+      checkAmounts: { otherTaxCents: 4, discountCents: 384 },
+    });
+
+    expect(screen.getByText("Includes a $3.84 discount.")).toBeInTheDocument();
+    expect(screen.queryByText(/but the total is/)).not.toBeInTheDocument();
+  });
+
+  it("fills in a GST of 0.00 when the scan found none, and saves a cleared GST as 0", async () => {
+    const { user, onConfirm } = renderReview({
+      ...SCANNED,
+      details: { ...SCANNED.details, subtotal_cents: 1050, gst_cents: null },
+    });
+
+    expect(screen.getByLabelText("GST")).toHaveValue("0.00");
+    await user.clear(screen.getByLabelText("GST"));
+    await user.click(screen.getByRole("button", { name: "Save Receipt" }));
+
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({ details: expect.objectContaining({ gst_cents: 0 }) }),
+    );
+  });
+
   it("refuses an amount that isn't a plain number", async () => {
     const { user, onConfirm } = renderReview();
 

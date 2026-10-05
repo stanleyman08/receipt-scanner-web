@@ -232,7 +232,11 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
       if (abortControllerRef.current?.signal.aborted) return;
 
       if (result.success) {
-        setCaptureState({ status: "editing", imageData, review: reviewOfScan(result.details, scanningInto) });
+        setCaptureState({
+          status: "editing",
+          imageData,
+          review: { ...reviewOfScan(result.details, scanningInto), checkAmounts: result.checkAmounts },
+        });
       } else {
         setCaptureState({ status: "error", imageData, error: result.error });
       }

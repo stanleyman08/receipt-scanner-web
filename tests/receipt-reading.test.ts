@@ -1,6 +1,6 @@
 import type { ExpenseDocument, ExpenseField } from "@aws-sdk/client-textract";
 import { describe, expect, it } from "vitest";
-import { readReceipt } from "@/lib/receipt-reading";
+import { readCheckAmounts, readReceipt } from "@/lib/receipt-reading";
 
 // Made-up receipts shaped like Textract AnalyzeExpense output. No real receipt data: the repo is public.
 function field(type: string, value: string, label?: string): ExpenseField {
@@ -462,5 +462,33 @@ describe("readReceipt", () => {
 
   it("leaves an amount too large to store blank, such as a registration number read as the total", () => {
     expect(readReceipt(receipt(field("TOTAL", "812345678.00"))).total_cents).toBeNull();
+  });
+});
+
+describe("readCheckAmounts", () => {
+  it("adds up the provincial taxes, including liquor tax and a combined GST + PST group, but not GST or the combined tax", () => {
+    const amounts = readCheckAmounts(
+      receipt(
+        field("TAX", "12.00", "TAX"),
+        field("TAX", "7.00", "(P) PST 7%"),
+        field("TAX", "5.00", "(G) GST 5%"),
+        field("TAX", "4.12", "LIQ 10%"),
+        field("TAX", "0.03", "Tax (GST + PST)"),
+        field("OTHER", "7%", "PST"),
+      ),
+    );
+    expect(amounts.otherTaxCents).toBe(1115);
+  });
+
+  it("adds up the discounts as positive amounts, however they're signed", () => {
+    const amounts = readCheckAmounts(receipt(field("DISCOUNT", "-3.84", "10% OFF"), field("DISCOUNT", "2.04", "AVT")));
+    expect(amounts.discountCents).toBe(588);
+  });
+
+  it("reads nothing extra from a plain receipt", () => {
+    expect(readCheckAmounts(receipt(field("TAX", "0.50", "GST"), field("TOTAL", "10.50")))).toEqual({
+      otherTaxCents: 0,
+      discountCents: 0,
+    });
   });
 });

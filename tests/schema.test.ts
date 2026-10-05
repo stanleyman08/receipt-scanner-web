@@ -60,4 +60,28 @@ describe("database setup", () => {
     expect(counted[0].count).toBe(2);
     expect(await hasPerCompanyUniqueConstraint(pg)).toBe(true);
   });
+
+  it("sets a blank GST saved before GST defaulted to 0.00 to 0, leaving other amounts as they are", async () => {
+    const pg = new PGlite();
+    await setUpDatabase(pg);
+    const { rows: buckets } = await pg.query<{ id: string }>(
+      "INSERT INTO buckets (company, year, month, category) VALUES ('Carino', 2026, 3, 'Food') RETURNING id",
+    );
+    await pg.query(
+      `INSERT INTO receipts (bucket_id, subtotal_cents, gst_cents, total_cents)
+       VALUES ($1, 1000, NULL, 1000), ($1, 2000, 100, 2100), ($1, NULL, NULL, NULL)`,
+      [buckets[0].id],
+    );
+
+    await setUpDatabase(pg);
+
+    const { rows } = await pg.query(
+      "SELECT subtotal_cents, gst_cents, total_cents FROM receipts ORDER BY total_cents NULLS LAST",
+    );
+    expect(rows).toEqual([
+      { subtotal_cents: 1000, gst_cents: 0, total_cents: 1000 },
+      { subtotal_cents: 2000, gst_cents: 100, total_cents: 2100 },
+      { subtotal_cents: null, gst_cents: 0, total_cents: null },
+    ]);
+  });
 });

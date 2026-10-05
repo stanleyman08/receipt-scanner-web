@@ -3,9 +3,12 @@
 import { useId, useState } from "react";
 import BucketPicker from "@/components/BucketPicker";
 import { useReceiptForm } from "@/components/useReceiptForm";
+import { parseAmountCents } from "@/lib/money";
+import { checkReceiptAmounts } from "@/lib/receipt-checks";
 import { type Bucket, MONTH_NAMES } from "@/types/bucket";
 import type { ReceiptReview } from "@/types/capture-flow";
 import { COMPANIES } from "@/types/company";
+import { NOTHING_TO_CHECK } from "@/types/receipt";
 
 const AMOUNT_ERROR = "Enter amounts as plain numbers, like 12.50.";
 const LABEL_CLASS = "block text-xs text-gray-500 uppercase tracking-wide mb-1";
@@ -39,6 +42,17 @@ export default function EditScreen({ imageData, review, buckets, error, onConfir
   };
 
   const message = amountError ?? error;
+  // Checked as the amounts are edited, so a warning goes once the misread amount is corrected.
+  const checks = checkReceiptAmounts(
+    {
+      subtotal_cents: parseAmountCents(fields.subtotal),
+      gst_cents: parseAmountCents(fields.gst),
+      total_cents: parseAmountCents(fields.total),
+    },
+    review.checkAmounts ?? NOTHING_TO_CHECK,
+  );
+  const warnings = checks.filter((check) => check.tone === "warning");
+  const notes = checks.filter((check) => check.tone === "note");
   // A scan stays in the bucket scanned into, so point out when its receipt date falls in another month.
   const isOtherMonth =
     fields.receiptDate !== "" && (suggested.year !== bucket.year || suggested.month !== bucket.month);
@@ -198,6 +212,19 @@ export default function EditScreen({ imageData, review, buckets, error, onConfir
 
           {/* Actions */}
           <div className="mt-auto shrink-0 space-y-3 px-4 py-3 sm:mt-0">
+            {/* Beside the Save button, so they're seen even when the field they're about has scrolled away */}
+            {warnings.length > 0 && (
+              <ul className="space-y-1 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                {warnings.map((warning) => (
+                  <li key={warning.message}>{warning.message}</li>
+                ))}
+              </ul>
+            )}
+            {notes.map((note) => (
+              <p key={note.message} className="text-sm text-gray-400">
+                {note.message}
+              </p>
+            ))}
             {message && (
               <p role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
                 {message}

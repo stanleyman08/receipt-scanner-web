@@ -70,6 +70,8 @@ export const SCHEMA_CHANGES = [
         UNIQUE USING INDEX buckets_company_year_month_category_key;
     END IF;
   END $$`,
+  // A receipt without GST is 0.00 rather than blank; receipts saved before that had their missing GST left blank.
+  "UPDATE receipts SET gst_cents = 0 WHERE gst_cents IS NULL",
 ];
 
 export const SETUP_STATEMENTS = [...AUTH_SCHEMA, ...APP_SCHEMA, ...SCHEMA_CHANGES];
