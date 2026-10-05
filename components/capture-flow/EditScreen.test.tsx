@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import EditScreen from "@/components/capture-flow/EditScreen";
@@ -131,6 +131,15 @@ describe("EditScreen", () => {
     await user.click(screen.getByLabelText("Date"));
 
     expect(screen.getByLabelText("Date")).toHaveValue("2026-04-01");
+  });
+
+  it("leaves an empty date empty when a scroll starts on it, without the picker opening", () => {
+    renderReview({ ...SCANNED, details: { ...SCANNED.details, receipt_date: null } });
+
+    fireEvent.pointerDown(screen.getByLabelText("Date"));
+    fireEvent.pointerCancel(screen.getByLabelText("Date"));
+
+    expect(screen.getByLabelText("Date")).toHaveValue("");
   });
 
   it("leaves a date that's already filled in as it is", async () => {

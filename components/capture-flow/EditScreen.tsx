@@ -102,7 +102,7 @@ export default function EditScreen({ imageData, review, buckets, error, onConfir
                     id={`${idPrefix}-date`}
                     type="date"
                     value={fields.receiptDate}
-                    onPointerDown={fillEmptyDate}
+                    onFocus={fillEmptyDate}
                     onChange={(e) => setField("receiptDate", e.target.value)}
                     // iOS Safari draws its own date control, wider than the half-width column, unless its native look
                     // is off. Without that look it would centre the date and collapse when empty.

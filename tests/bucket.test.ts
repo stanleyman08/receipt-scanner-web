@@ -4,6 +4,7 @@ import {
   bucketExists,
   filterBucketsByCompany,
   filterBucketsByYearMonth,
+  firstDayOfBucket,
   getDefaultBucket,
   getUniqueMonthsForYear,
   getUniqueYears,
@@ -162,6 +163,12 @@ describe("suggestBucket", () => {
     expect(suggestBucket({ receiptDate: "2025-12-30", selected: scanningInto, handPicked: pickedSupply })).toEqual(
       pickedSupply,
     );
+  });
+});
+
+describe("firstDayOfBucket", () => {
+  it("is the 1st of the bucket's month, as YYYY-MM-DD", () => {
+    expect(firstDayOfBucket({ company: "Carino", year: 2026, month: 3, category: "Food" })).toBe("2026-03-01");
   });
 });
 

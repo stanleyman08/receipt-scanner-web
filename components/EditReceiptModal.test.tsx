@@ -19,22 +19,35 @@ const UNDATED: Receipt = {
   total_cents: 1050,
 };
 
+function renderDialog(receipt: Receipt) {
+  const user = userEvent.setup();
+  render(
+    <EditReceiptModal
+      receipt={receipt}
+      receiptBucket={MARCH_2026_SUPPLY}
+      buckets={[]}
+      isSaving={false}
+      onClose={vi.fn()}
+      onSave={vi.fn()}
+    />,
+  );
+  return { user };
+}
+
 describe("EditReceiptModal", () => {
   it("opens an empty date on the receipt's bucket month by filling in its 1st", async () => {
-    const user = userEvent.setup();
-    render(
-      <EditReceiptModal
-        receipt={UNDATED}
-        receiptBucket={MARCH_2026_SUPPLY}
-        buckets={[]}
-        isSaving={false}
-        onClose={vi.fn()}
-        onSave={vi.fn()}
-      />,
-    );
+    const { user } = renderDialog(UNDATED);
 
     await user.click(screen.getByLabelText("Date"));
 
     expect(screen.getByLabelText("Date")).toHaveValue("2026-03-01");
+  });
+
+  it("leaves a date that's already filled in as it is", async () => {
+    const { user } = renderDialog({ ...UNDATED, receipt_date: "2026-03-18" });
+
+    await user.click(screen.getByLabelText("Date"));
+
+    expect(screen.getByLabelText("Date")).toHaveValue("2026-03-18");
   });
 });

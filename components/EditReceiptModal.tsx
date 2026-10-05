@@ -113,7 +113,7 @@ export default function EditReceiptModal({
               id={`${idPrefix}-date`}
               type="date"
               value={fields.receiptDate}
-              onPointerDown={fillEmptyDate}
+              onFocus={fillEmptyDate}
               onChange={(e) => setField("receiptDate", e.target.value)}
               className={INPUT_CLASS}
             />
