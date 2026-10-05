@@ -8,6 +8,7 @@ A web application for scanning receipts using your phone's camera. It reads each
 - Scan receipts using your device's camera, or upload a photo
 - Automatic data extraction (vendor, date, subtotal, GST, total, invoice number)
 - Checks on the review screen after a scan: a warning when the subtotal, GST and PST don't add up to the total (within 2¢, showing the arithmetic), when GST is more than 5% of the subtotal, or when the subtotal or total couldn't be read; a discount that closes the gap is noted instead. PST, liquor tax and discounts are read for the check only, not saved
+- The camera's Capture button reads "Starting camera…" until the camera shows a picture, and a black photo is never sent for scanning
 - GST is 0.00 when a receipt has none: a scan that finds no GST fills in 0.00, and a blank GST saves as 0.00
 - Receipt dates accept year-first dates and month names, with month/day/year as the numeric fallback (MM/DD/YYYY or MM/DD/YY)
 - Each scan's photo and what Textract returned for it are kept for 3 days (the newest 300 at most), so a misread field can be traced

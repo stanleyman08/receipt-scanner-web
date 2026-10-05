@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
+import { isBlankSource } from "@/lib/blank-frame";
 import { type Bucket, formatBucketWithCompany } from "@/types/bucket";
 
 interface CameraCaptureProps {
@@ -16,6 +17,8 @@ interface CameraCaptureProps {
 
 // Overlay margin (10% on each side = 80% capture area)
 const OVERLAY_MARGIN = 0.1;
+// How often the camera's picture is checked while it starts, until it's more than black.
+const FRAME_CHECK_MS = 100;
 
 /**
  * Crops the captured image to the overlay area (center 80%)
@@ -58,6 +61,21 @@ export default function CameraCapture({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
+  const [hasStream, setHasStream] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  // A camera can show solid black for a moment after it starts, and a photo taken then reads as nothing. The shutter
+  // waits until the picture comes through.
+  useEffect(() => {
+    if (!hasStream || isReady) return;
+    const timer = setInterval(() => {
+      const video = webcamRef.current?.video;
+      if (video && !isBlankSource(video)) setIsReady(true);
+    }, FRAME_CHECK_MS);
+    return () => clearInterval(timer);
+  }, [hasStream, isReady]);
+
+  const handleUserMedia = useCallback(() => setHasStream(true), []);
 
   const videoConstraints = {
     facingMode: "environment",
@@ -66,7 +84,7 @@ export default function CameraCapture({
   };
 
   const handleCapture = useCallback(() => {
-    if (webcamRef.current) {
+    if (webcamRef.current && isReady) {
       // Trigger flash effect
       setShowFlash(true);
       setTimeout(() => setShowFlash(false), 150);
@@ -79,7 +97,7 @@ export default function CameraCapture({
         });
       }
     }
-  }, [onCapture]);
+  }, [onCapture, isReady]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -116,6 +134,7 @@ export default function CameraCapture({
           // phone), too small for Textract to read a receipt's small print.
           forceScreenshotSourceSize
           videoConstraints={videoConstraints}
+          onUserMedia={handleUserMedia}
           onUserMediaError={handleCameraError}
           className="flex-1 object-cover w-full h-full"
         />
@@ -163,10 +182,12 @@ export default function CameraCapture({
             <button
               type="button"
               onClick={handleCapture}
-              disabled={isLoading}
-              className="bg-white text-gray-800 px-8 py-4 rounded-full font-medium shadow-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+              disabled={isLoading || !isReady}
+              className={`px-8 py-4 rounded-full font-medium shadow-lg text-lg transition-colors disabled:cursor-not-allowed ${
+                isReady ? "bg-white text-gray-800 hover:bg-gray-100 disabled:opacity-50" : "bg-white/25 text-white"
+              }`}
             >
-              Capture
+              {isReady ? "Capture" : "Starting camera…"}
             </button>
           </div>
         </div>

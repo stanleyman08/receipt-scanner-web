@@ -18,6 +18,7 @@ import EditReceiptModal from "@/components/EditReceiptModal";
 import ExportButton from "@/components/ExportButton";
 import ReceiptTable from "@/components/ReceiptTable";
 import { authClient } from "@/lib/auth-client";
+import { isBlankPhoto } from "@/lib/blank-frame";
 import {
   filterBucketsByCompany,
   filterBucketsByYearMonth,
@@ -42,6 +43,7 @@ import type { Receipt, ScanResponse } from "@/types/receipt";
 
 const SUCCESS_MESSAGE_MS = 3000;
 const SCAN_FAILED = "The receipt couldn't be scanned. Check your connection and try again.";
+const BLANK_PHOTO = "The photo came out black, so it wasn't sent. Retake it once the camera shows the receipt.";
 const SAVE_FAILED = "The receipt couldn't be saved. Check your connection and try again.";
 const ADD_BUCKET_FAILED = "The bucket couldn't be added. Check your connection and try again.";
 const UPDATE_FAILED = "The changes couldn't be saved. Check your connection and try again.";
@@ -203,6 +205,12 @@ export default function ReceiptsApp({ company, initialBuckets, initialReceipts }
     };
 
     try {
+      // A black photo reads as nothing and would still cost a scan, so it isn't sent.
+      if (await isBlankPhoto(imageData)) {
+        setCaptureState({ status: "error", imageData, error: BLANK_PHOTO });
+        return;
+      }
+
       // Stage 1 & 2: Deskew and optimize image (with progress callback)
       updateStage("deskewing");
       const optimizedImage = await optimizeImageForOCR(imageData, (preprocessStage) => {
