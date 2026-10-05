@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Webcam from "react-webcam";
+import { isBlankSource } from "@/lib/blank-frame";
 import { type Bucket, formatBucketWithCompany } from "@/types/bucket";
 
 interface CameraCaptureProps {
@@ -16,6 +17,10 @@ interface CameraCaptureProps {
 
 // Overlay margin (10% on each side = 80% capture area)
 const OVERLAY_MARGIN = 0.1;
+// How often the camera's picture is checked while it starts, until it's more than black.
+const FRAME_CHECK_MS = 100;
+// How long the camera can show no picture before the screen says what to do about it.
+const STUCK_AFTER_MS = 5000;
 
 /**
  * Crops the captured image to the overlay area (center 80%)
@@ -58,6 +63,25 @@ export default function CameraCapture({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const [isStuck, setIsStuck] = useState(false);
+
+  // A camera can show solid black for a moment after it starts, and a photo taken then reads as nothing. The shutter
+  // waits until the picture comes through, and the screen says what to do if it never does.
+  useEffect(() => {
+    if (isReady) return;
+    const check = setInterval(() => {
+      const video = webcamRef.current?.video;
+      if (!video || isBlankSource(video)) return;
+      setIsReady(true);
+      setIsStuck(false);
+    }, FRAME_CHECK_MS);
+    const stuck = setTimeout(() => setIsStuck(true), STUCK_AFTER_MS);
+    return () => {
+      clearInterval(check);
+      clearTimeout(stuck);
+    };
+  }, [isReady]);
 
   const videoConstraints = {
     facingMode: "environment",
@@ -66,20 +90,26 @@ export default function CameraCapture({
   };
 
   const handleCapture = useCallback(() => {
-    if (webcamRef.current) {
-      // Trigger flash effect
-      setShowFlash(true);
-      setTimeout(() => setShowFlash(false), 150);
-
-      const imageSrc = webcamRef.current.getScreenshot();
-      if (imageSrc) {
-        // Crop to overlay area before passing to parent
-        cropToOverlay(imageSrc).then((croppedImage) => {
-          onCapture(croppedImage);
-        });
-      }
+    const webcam = webcamRef.current;
+    if (!webcam || !isReady) return;
+    // The picture can still drop out after it started, and a black photo isn't worth a scan: wait for it again.
+    if (webcam.video && isBlankSource(webcam.video)) {
+      setIsReady(false);
+      return;
     }
-  }, [onCapture]);
+
+    // Trigger flash effect
+    setShowFlash(true);
+    setTimeout(() => setShowFlash(false), 150);
+
+    const imageSrc = webcam.getScreenshot();
+    if (imageSrc) {
+      // Crop to overlay area before passing to parent
+      cropToOverlay(imageSrc).then((croppedImage) => {
+        onCapture(croppedImage);
+      });
+    }
+  }, [onCapture, isReady]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -152,6 +182,11 @@ export default function CameraCapture({
         {showFlash && <div className="absolute inset-0 bg-white animate-flash pointer-events-none" />}
 
         <div className="absolute bottom-0 left-0 right-0 pb-8 pt-4 bg-gradient-to-t from-black/70 to-transparent">
+          <p role="status" className="mb-3 px-6 text-center text-sm text-white drop-shadow-lg">
+            {!isReady && isStuck
+              ? "The camera isn't showing a picture. Close it and open it again, or reload the page."
+              : ""}
+          </p>
           <div className="flex justify-center gap-6">
             <button
               type="button"
@@ -163,10 +198,12 @@ export default function CameraCapture({
             <button
               type="button"
               onClick={handleCapture}
-              disabled={isLoading}
-              className="bg-white text-gray-800 px-8 py-4 rounded-full font-medium shadow-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+              disabled={isLoading || !isReady}
+              className={`px-8 py-4 rounded-full font-medium shadow-lg text-lg transition-colors disabled:cursor-not-allowed ${
+                isReady ? "bg-white text-gray-800 hover:bg-gray-100 disabled:opacity-50" : "bg-white/25 text-white"
+              }`}
             >
-              Capture
+              {isReady ? "Capture" : "Starting camera…"}
             </button>
           </div>
         </div>
